@@ -439,7 +439,10 @@ namespace Characters
                 FalseAttack();
                 Cache.Rigidbody.AddForce(direction * 40f, ForceMode.VelocityChange);
                 _dashCooldownLeft = 0.2f;
-                ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.ShakeGas();
+                if (!AI)
+                {
+                    ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.ShakeGas();
+                }
             }
         }
 
@@ -461,7 +464,10 @@ namespace Characters
                 FalseAttack();
                 Cache.Rigidbody.AddForce(direction * 40f, ForceMode.VelocityChange);
                 _dashCooldownLeft = 0.2f;
-                ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.ShakeGas();
+                if(!AI)
+                {
+                    ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.ShakeGas();
+                }
             }
         }
 
@@ -759,7 +765,7 @@ namespace Characters
             }
             else if (previousHumanWeapon is AmmoWeapon)
             {
-                if (previousHumanWeapon is AHSSWeapon)
+                if (previousHumanWeapon is AHSSWeapon && !AI)
                 {
                     ((AHSSWeapon)previousHumanWeapon).HandleUI();
                 }
@@ -828,7 +834,10 @@ namespace Characters
             _needFinishReload = true;
             _reloadTimeLeft = _stateTimeLeft;
             _reloadCooldownLeft = _reloadTimeLeft + 0.5f;
-            ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.Reload();
+            if (!AI)
+            {
+                ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.Reload();
+            }
         }
 
         protected void FinishReload()
@@ -998,7 +1007,10 @@ namespace Characters
                 LoadSkin();
                 _cameraFPS = false;
             }
-            ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.SetBottomHUD(this);
+            if (!AI)
+            {
+                ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.SetBottomHUD(this);
+            }
         }
 
 
@@ -1168,9 +1180,12 @@ namespace Characters
                             return;
                         if (type != "APG" && _lastNapeHitTimes.ContainsKey(titan) && (_lastNapeHitTimes[titan] + 0.2f) > Time.time)
                             return;
-                        ((InGameMenu)UIManager.CurrentMenu).ShowKillScore(damage);
-                        ((InGameCamera)SceneLoader.CurrentCamera).TakeSnapshot(titan.BaseTitanCache.Neck.position, damage);
-                        if (type == "Blade" && SettingsManager.GraphicsSettings.BloodSplatterEnabled.Value)
+                        if (!AI)
+                        {
+                            ((InGameMenu)UIManager.CurrentMenu).ShowKillScore(damage);
+                            ((InGameCamera)SceneLoader.CurrentCamera).TakeSnapshot(titan.BaseTitanCache.Neck.position, damage);
+                        } 
+                        if (type == "Blade" && SettingsManager.GraphicsSettings.BloodSplatterEnabled.Value && !AI)
                             ((InGameMenu)UIManager.CurrentMenu).ShowBlood();
                         if (type == "Blade" || type == "AHSS" || type == "APG")
                         {
@@ -1224,8 +1239,11 @@ namespace Characters
                 }
                 else
                 {
-                    ((InGameMenu)UIManager.CurrentMenu).ShowKillScore(damage);
-                    ((InGameCamera)SceneLoader.CurrentCamera).TakeSnapshot(victimChar.Cache.Transform.position, damage);
+                    if(!AI)
+                    {
+                        ((InGameMenu)UIManager.CurrentMenu).ShowKillScore(damage);
+                        ((InGameCamera)SceneLoader.CurrentCamera).TakeSnapshot(victimChar.Cache.Transform.position, damage);
+                    }
                     victimChar.GetHit(this, damage, type, collider.name);
                 }
             }
@@ -1932,7 +1950,7 @@ namespace Characters
 
         private void UpdateBladeFire()
         {
-            if (Setup == null || Setup.Weapon != HumanWeapon.Blade)
+            if (Setup == null || Setup.Weapon != HumanWeapon.Blade || AI)
                 return;
             int rank = ((InGameMenu)UIManager.CurrentMenu).GetStylebarRank();
             if (rank >= 6)
@@ -2739,7 +2757,10 @@ namespace Characters
         {
             CurrentSpecial = special;
             Special = HumanSpecials.GetSpecialUseable(this, special);
-            ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.SetSpecialIcon(HumanSpecials.GetSpecialIcon(special));
+            if (!AI)
+            {
+                ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.SetSpecialIcon(HumanSpecials.GetSpecialIcon(special));
+            }
         }
 
         protected void LoadSkin(Player player = null)
@@ -3001,10 +3022,13 @@ namespace Characters
             _targetRotation = quaternion;
             TargetAngle = facingDirection;
             Stats.UseTSGas();
-            ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.ShakeGas();
+            if (!AI)
+            {
+                ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.ShakeGas();
+                ((InGameCamera)SceneLoader.CurrentCamera).StartShake();
+            }
             EffectSpawner.Spawn(EffectPrefabs.GasBurst, Cache.Transform.position, Cache.Transform.rotation);
             PlaySound(HumanSounds.GasBurst);
-            ((InGameCamera)SceneLoader.CurrentCamera).StartShake();
         }
 
         public void SetInterpolation(bool interpolate)
