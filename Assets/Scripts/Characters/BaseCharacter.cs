@@ -25,6 +25,8 @@ namespace Characters
         public float MaxSoundDistance = 500f;
         protected float _disableKinematicTimeLeft = 0f;
 
+        public bool forbiddenAnimation = false;
+
         public string Name { 
             get
             {
@@ -343,7 +345,7 @@ namespace Characters
         [PunRPC]
         public void PlayAnimationRPC(string animation, float startTime, PhotonMessageInfo info)
         {
-            if (info.Sender != Cache.PhotonView.Owner)
+            if (info.Sender != Cache.PhotonView.Owner || forbiddenAnimation)
                 return;
             Animation.Play(animation, startTime);
         }
@@ -351,7 +353,7 @@ namespace Characters
         [PunRPC]
         public void PlayAnimationResetRPC(string animation, PhotonMessageInfo info)
         {
-            if (info.Sender != Cache.PhotonView.Owner)
+            if (info.Sender != Cache.PhotonView.Owner || forbiddenAnimation)
                 return;
             Animation.Play(animation, 0f, true);
         }
@@ -389,7 +391,7 @@ namespace Characters
         [PunRPC]
         public void CrossFadeRPC(string animation, float fadeTime, float startTime, PhotonMessageInfo info)
         {
-            if (info.Sender != Cache.PhotonView.Owner)
+            if (info.Sender != Cache.PhotonView.Owner || forbiddenAnimation)
                 return;
             Animation.CrossFade(animation, fadeTime, startTime);
         }
@@ -397,7 +399,7 @@ namespace Characters
         [PunRPC]
         public void CrossFadeWithSpeedRPC(string animation, float speed, float fadeTime, float startTime, PhotonMessageInfo info)
         {
-            if (info.Sender != Cache.PhotonView.Owner)
+            if (info.Sender != Cache.PhotonView.Owner || forbiddenAnimation)
                 return;
             Animation.SetSpeed(animation, speed);
             Animation.CrossFade(animation, fadeTime, startTime);
