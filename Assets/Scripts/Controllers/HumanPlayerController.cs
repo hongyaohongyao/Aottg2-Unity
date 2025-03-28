@@ -62,6 +62,7 @@ namespace Controllers
                     _human.HasDirection = false;
                 return;
             }
+            _human.HoldJump = _humanInput.Jump.GetKey();
             _human.IsWalk = _humanInput.HorseWalk.GetKey();
             if (_human.MountState != HumanMountState.Horse)
             {
@@ -73,6 +74,8 @@ namespace Controllers
             }
             int forward = 0;
             int right = 0;
+            _human.HoldLeft = _generalInput.Left.GetKey();
+            _human.HoldRight = _generalInput.Right.GetKey();
             if (_generalInput.Autorun.GetKeyDown())
                 _autorun = !_autorun;
             if (_generalInput.Forward.GetKey())
@@ -206,6 +209,9 @@ namespace Controllers
             bool hookBoth = _humanInput.HookBoth.GetKey();
             bool hookLeft = _humanInput.HookLeft.GetKey();
             bool hookRight = _humanInput.HookRight.GetKey();
+            _human.HoldHookLeft = hookLeft;
+            _human.HoldHookRight = hookRight;
+            _human.HoldHookBoth = hookBoth;
             bool hasHook = _human.HookLeft.HasHook() || _human.HookRight.HasHook();
             if (_human.CancelHookBothKey)
             {

@@ -133,6 +133,17 @@ namespace Characters
         private bool _isReelingOut;
         private Dictionary<BaseTitan, float> _lastNapeHitTimes = new Dictionary<BaseTitan, float>();
 
+        public bool HoldJump = false;
+
+        public bool HoldHookLeft = false;
+
+        public bool HoldHookRight = false;
+
+        public bool HoldHookBoth = false;
+
+        public bool HoldLeft = false;
+        public bool HoldRight = false;
+
         protected override void CreateDetection()
         {
             Detection = new HumanDetection(this);
@@ -1725,7 +1736,7 @@ namespace Characters
                             PlayAnimation(HumanAnimations.AirRise);
                         }
                     }
-                    else if (!(State != HumanState.Idle || !IsPressDirectionTowardsHero() || SettingsManager.InputSettings.Human.Jump.GetKey() || SettingsManager.InputSettings.Human.HookLeft.GetKey() || SettingsManager.InputSettings.Human.HookRight.GetKey() || SettingsManager.InputSettings.Human.HookBoth.GetKey() || !IsFrontGrounded() || Animation.IsPlaying(HumanAnimations.WallRun) || Animation.IsPlaying(HumanAnimations.Dodge)))
+                    else if (!(State != HumanState.Idle || !IsPressDirectionTowardsHero() || HoldJump || HoldHookLeft || HoldHookRight || HoldHookBoth || !IsFrontGrounded() || Animation.IsPlaying(HumanAnimations.WallRun) || Animation.IsPlaying(HumanAnimations.Dodge)))
                     {
                         CrossFade(HumanAnimations.WallRun, 0.1f);
                         _wallRunTime = 0f;
@@ -1757,7 +1768,7 @@ namespace Characters
                         }
                         else
                             _targetRotation = GetTargetRotation();
-                        bool isUsingGas = SettingsManager.InputSettings.Human.Jump.GetKey() ^ SettingsManager.InputSettings.Human.AutoUseGas.Value;
+                        bool isUsingGas = HoldJump ^ SettingsManager.InputSettings.Human.AutoUseGas.Value;
                         if (((!pivotLeft && !pivotRight) && (MountState == HumanMountState.None && isUsingGas)) && (Stats.CurrentGas > 0f))
                         {
                             if (HasDirection)
@@ -2197,7 +2208,7 @@ namespace Characters
                     Vector3 v = (hook.GetHookPosition() - Cache.Transform.position).normalized * 10f;
                     if (!(_launchLeft && _launchRight))
                         v *= 2f;
-                    if ((Vector3.Angle(Cache.Rigidbody.velocity, v) > 90f) && (SettingsManager.InputSettings.Human.Jump.GetKey() ^ SettingsManager.InputSettings.Human.AutoUseGas.Value))
+                    if ((Vector3.Angle(Cache.Rigidbody.velocity, v) > 90f) && (HoldJump ^ SettingsManager.InputSettings.Human.AutoUseGas.Value))
                     {
                         pivot = true;
                     }
@@ -3083,18 +3094,18 @@ namespace Characters
         {
             if (!Grounded && (HookLeft.IsHooked() || HookRight.IsHooked() || MountState == HumanMountState.Horse))
             {
-                if (SettingsManager.InputSettings.General.Left.GetKey())
+                if (HoldLeft)
                     AttackAnimation = (UnityEngine.Random.Range(0, 100) >= 50) ? HumanAnimations.Attack1HookL1 : HumanAnimations.Attack1HookL2;
-                else if (SettingsManager.InputSettings.General.Right.GetKey())
+                else if (HoldRight)
                     AttackAnimation = (UnityEngine.Random.Range(0, 100) >= 50) ? HumanAnimations.Attack1HookR1 : HumanAnimations.Attack1HookR2;
                 else if (_leanLeft)
                     AttackAnimation = (UnityEngine.Random.Range(0, 100) >= 50) ? HumanAnimations.Attack1HookL1 : HumanAnimations.Attack1HookL2;
                 else
                     AttackAnimation = (UnityEngine.Random.Range(0, 100) >= 50) ? HumanAnimations.Attack1HookR1 : HumanAnimations.Attack1HookR2;
             }
-            else if (SettingsManager.InputSettings.General.Left.GetKey())
+            else if (HoldLeft)
                 AttackAnimation = HumanAnimations.Attack2;
-            else if (SettingsManager.InputSettings.General.Right.GetKey())
+            else if (HoldRight)
                 AttackAnimation = HumanAnimations.Attack1;
             else
             {
