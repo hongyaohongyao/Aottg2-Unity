@@ -131,7 +131,7 @@ public class GameObjToPrefabs : MonoBehaviour
         // 保存材质到指定文件夹
         foreach (var material in materials)
         {
-            string materialPath = Path.Combine(materialsFolderPath, material.name.Replace("/", "_") + ".mat");
+            string materialPath = Path.Combine(materialsFolderPath, material.name.Replace("/", "_") + GenerateRandomFileName() + ".mat");
 
             // 如果材质还没有被保存过，进行保存
             if (AssetDatabase.GetAssetPath(material) == "")
