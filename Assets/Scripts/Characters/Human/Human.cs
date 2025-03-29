@@ -62,7 +62,7 @@ namespace Characters
         public bool CanDodge = true;
         public bool IsInvincible = true;
         public float InvincibleTimeLeft;
-        
+
         public bool HorsebackCombat = false;
         public bool IsAttackableState;
         public bool IsRefillable;
@@ -133,6 +133,24 @@ namespace Characters
         private bool _isReelingOut;
         private Dictionary<BaseTitan, float> _lastNapeHitTimes = new Dictionary<BaseTitan, float>();
 
+        protected bool _pivotLeft = false;
+        protected bool _pivotRight = false;
+        protected bool _pivot = false;
+
+        public bool PivotLeft
+        {
+            get { return _pivotLeft; }
+        }
+        public bool PivotRight
+        {
+            get { return _pivotRight; }
+        }
+        public bool Pivot
+        {
+            get { return _pivot; }
+        }
+
+
         public bool HoldJump = false;
 
         public bool HoldHookLeft = false;
@@ -143,6 +161,8 @@ namespace Characters
 
         public bool HoldLeft = false;
         public bool HoldRight = false;
+
+        public Vector3 AIAimPoint;
 
         protected override void CreateDetection()
         {
@@ -223,6 +243,10 @@ namespace Characters
 
         public override Vector3 GetAimPoint()
         {
+            if (AI)
+            {
+                return AIAimPoint;
+            }
             RaycastHit hit;
             Ray ray = GetAimRayAfterHumanCheap(); // SceneLoader.CurrentCamera.Camera.ScreenPointToRay(Input.mousePosition);
             Vector3 target = ray.origin + ray.direction * 1000f;
@@ -464,7 +488,7 @@ namespace Characters
                 FalseAttack();
                 Cache.Rigidbody.AddForce(direction * 40f, ForceMode.VelocityChange);
                 _dashCooldownLeft = 0.2f;
-                if(!AI)
+                if (!AI)
                 {
                     ((InGameMenu)UIManager.CurrentMenu).HUDBottomHandler.ShakeGas();
                 }
@@ -1184,7 +1208,7 @@ namespace Characters
                         {
                             ((InGameMenu)UIManager.CurrentMenu).ShowKillScore(damage);
                             ((InGameCamera)SceneLoader.CurrentCamera).TakeSnapshot(titan.BaseTitanCache.Neck.position, damage);
-                        } 
+                        }
                         if (type == "Blade" && SettingsManager.GraphicsSettings.BloodSplatterEnabled.Value && !AI)
                             ((InGameMenu)UIManager.CurrentMenu).ShowBlood();
                         if (type == "Blade" || type == "AHSS" || type == "APG")
@@ -1239,7 +1263,7 @@ namespace Characters
                 }
                 else
                 {
-                    if(!AI)
+                    if (!AI)
                     {
                         ((InGameMenu)UIManager.CurrentMenu).ShowKillScore(damage);
                         ((InGameCamera)SceneLoader.CurrentCamera).TakeSnapshot(victimChar.Cache.Transform.position, damage);
@@ -1538,9 +1562,9 @@ namespace Characters
                 {
                     Cache.Transform.rotation = Quaternion.Lerp(Cache.Transform.rotation, _targetRotation, Time.deltaTime * rotationSpeed);
                 }
-                bool pivotLeft = FixedUpdateLaunch(true);
-                bool pivotRight = FixedUpdateLaunch(false);
-                bool pivot = pivotLeft || pivotRight;
+                _pivotLeft = FixedUpdateLaunch(true);
+                _pivotRight = FixedUpdateLaunch(false);
+                _pivot = _pivotLeft || _pivotRight;
                 if (Grounded)
                 {
                     Vector3 newVelocity = Vector3.zero;
@@ -1632,7 +1656,7 @@ namespace Characters
                         float distance = Vector3.Distance(Horse.Cache.Transform.position, Cache.Transform.position);
                         force += (Horse.Cache.Transform.position - Cache.Transform.position).normalized * 0.6f * Gravity.magnitude * distance / 12f;
                     }
-                    if (!IsStock(pivot) && !pivot)
+                    if (!IsStock(_pivot) && !_pivot)
                     {
                         _currentVelocity += force;
                         Cache.Rigidbody.velocity = _currentVelocity;
@@ -1787,7 +1811,7 @@ namespace Characters
                         else
                             _targetRotation = GetTargetRotation();
                         bool isUsingGas = HoldJump ^ SettingsManager.InputSettings.Human.AutoUseGas.Value;
-                        if (((!pivotLeft && !pivotRight) && (MountState == HumanMountState.None && isUsingGas)) && (Stats.CurrentGas > 0f))
+                        if (((!_pivotLeft && !_pivotRight) && (MountState == HumanMountState.None && isUsingGas)) && (Stats.CurrentGas > 0f))
                         {
                             if (HasDirection)
                             {
@@ -1797,7 +1821,7 @@ namespace Characters
                             {
                                 Cache.Rigidbody.AddForce((Cache.Transform.forward * targetDirection.magnitude), ForceMode.Acceleration);
                             }
-                            pivot = true;
+                            _pivot = true;
                         }
                     }
                     if ((Animation.IsPlaying(HumanAnimations.AirFall) && (_currentVelocity.magnitude < 0.2f)) && this.IsFrontGrounded())
@@ -1806,11 +1830,11 @@ namespace Characters
                     }
                     FixedUpdateWallSlide();
                 }
-                if (pivotLeft && pivotRight)
+                if (_pivotLeft && _pivotRight)
                     FixedUpdatePivot((HookRight.GetHookPosition() + HookLeft.GetHookPosition()) * 0.5f);
-                else if (pivotLeft)
+                else if (_pivotLeft)
                     FixedUpdatePivot(HookLeft.GetHookPosition());
-                else if (pivotRight)
+                else if (_pivotRight)
                     FixedUpdatePivot(HookRight.GetHookPosition());
                 bool lowerGravity = false;
                 if (IsHookedLeft() && HookLeft.GetHookPosition().y > Cache.Transform.position.y && _launchLeft)
@@ -1826,7 +1850,7 @@ namespace Characters
                 {
                     if (ValidStockAttacks())
                     {
-                        bool stockPivot = pivotLeft || pivotRight;
+                        bool stockPivot = _pivotLeft || _pivotRight;
                         bool isStock = IsStock(stockPivot);
                         if (isStock && CanStockDueToBL() || !stockPivot && CanStockDueToBL())
                         {
@@ -1845,7 +1869,7 @@ namespace Characters
                 Cache.Rigidbody.AddForce(gravity);
                 if (!_cancelGasDisable)
                 {
-                    if (pivot)
+                    if (_pivot)
                     {
                         Stats.UseFrameGas();
                         if (!HumanCache.Smoke.emission.enabled)
@@ -2268,7 +2292,7 @@ namespace Characters
                     v = position - (Cache.Rigidbody.position - new Vector3(0, 0.020f, 0)); // 0.020F gives the player the original aottg1 clipping required for bounce.
                 }
             }
-           
+
             float reelAxis = GetReelAxis();
             if (reelAxis > 0f)
             {
@@ -3295,32 +3319,32 @@ namespace Characters
             Animation.SetSpeed(HumanAnimations.Refill, refillPoints + 1);
         }
 
-        private bool HasHook()
+        public bool HasHook()
         {
             return HookLeft.HasHook() || HookRight.HasHook();
         }
 
-        private bool IsHookedAny()
+        public bool IsHookedAny()
         {
             return IsHookedLeft() || IsHookedRight();
         }
 
-        private bool IsHookedLeft()
+        public bool IsHookedLeft()
         {
             return HookLeft.IsHooked();
         }
 
-        private bool IsHookedRight()
+        public bool IsHookedRight()
         {
             return HookRight.IsHooked();
         }
 
-        private bool IsFrontGrounded()
+        public bool IsFrontGrounded()
         {
             return CheckRaycastIgnoreTriggers(Cache.Transform.position + Cache.Transform.up * 1f, Cache.Transform.forward, 1f, GroundMask.value);
         }
 
-        private bool IsPressDirectionTowardsHero()
+        public bool IsPressDirectionTowardsHero()
         {
             if (!HasDirection)
                 return false;
