@@ -3339,6 +3339,26 @@ namespace Characters
             return HookRight.IsHooked();
         }
 
+        public bool IsHookingAny()
+        {
+            return IsHookingLeft() || IsHookingRight();
+        }
+
+        public bool IsHookingLeft()
+        {
+            return HookLeft.IsHooking();
+        }
+
+        public bool IsHookingRight()
+        {
+            return HookRight.IsHooking();
+        }
+
+        public bool IsHookReady()
+        {
+            return HookLeft.HookReady() || HookRight.HookReady();
+        }
+
         public bool IsFrontGrounded()
         {
             return CheckRaycastIgnoreTriggers(Cache.Transform.position + Cache.Transform.up * 1f, Cache.Transform.forward, 1f, GroundMask.value);
