@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Mathematics;
 using ApplicationManagers;
 using Settings;
 using Characters;
@@ -7,18 +8,23 @@ using System.Collections.Generic;
 using Utility;
 using Photon.Pun;
 using UnityEngine.EventSystems;
+using Map;
+using Random = UnityEngine.Random;
+using Discord;
+using UnityEditor.UI;
 
 namespace Controllers
 {
     class HumanAIController : BaseAIController
     {
         protected Human _human;
-        protected float _reelOutScrollTimeLeft;
-        protected float _reelInScrollCooldownLeft = 0f;
-        protected float _reelInScrollCooldown = 0.2f;
+        public Human Human
+        {
+            get { return _human; }
+        }
         protected HumanInputSettings _humanInput;
-        protected static LayerMask HookMask = PhysicsLayer.GetMask(PhysicsLayer.TitanMovebox, PhysicsLayer.TitanPushbox,
-            PhysicsLayer.MapObjectEntities, PhysicsLayer.MapObjectProjectiles, PhysicsLayer.MapObjectAll);
+        public static readonly LayerMask BarrierMask = PhysicsLayer.GetMask(PhysicsLayer.Human, PhysicsLayer.TitanPushbox, PhysicsLayer.ProjectileDetection,
+            PhysicsLayer.MapObjectProjectiles, PhysicsLayer.MapObjectEntities, PhysicsLayer.MapObjectAll);
 
         public Vector3? MoveDirection = null;
 
@@ -28,7 +34,7 @@ namespace Controllers
 
         public bool DoJump = false;
 
-        public bool DoAttack = false; 
+        public bool DoAttack = false;
         public bool DoSpecial = false;
 
         public bool DoHorseMount = false;
@@ -37,12 +43,32 @@ namespace Controllers
 
         public bool DoReload = false;
 
-        public float ReelAxis = 0.0f;
+        public int ReelAxis = 0;
 
         public bool DoHookLeft = false;
         public bool DoHookRight = false;
 
         public bool DoHookBoth = false;
+
+        public float _hookLeftTimer = 0f;
+        public float _hookRightTimer = 0f;
+
+        public FSM fsm;
+
+        public ITargetable Target;
+
+        public Vector3 TargetPosition;
+        public Vector3 TargetDirection;
+
+        public float LockingDistance = 100f;
+
+        public float DetectDistance = 100f;
+
+        public float HookSpeed = 150f;
+
+        public static readonly Vector3 VectorLeft80 = new(Mathf.Sin(-80f * Mathf.Deg2Rad), 0f, Mathf.Cos(-80f * Mathf.Deg2Rad));
+        public static readonly Vector3 VectorRight80 = new(Mathf.Sin(80f * Mathf.Deg2Rad), 0f, Mathf.Cos(80f * Mathf.Deg2Rad));
+        public static readonly Vector3 VectorUp80 = new(0f, Mathf.Sin(80f * Mathf.Deg2Rad), Mathf.Cos(80f * Mathf.Deg2Rad));
 
 
         protected override void Awake()
@@ -162,7 +188,7 @@ namespace Controllers
             UpdateHookInput();
             UpdateReelInput();
             UpdateDashInput();
-            bool canWeapon =  _human.IsAttackableState && !_illegalWeaponStates.Contains(_human.State) && !_human.Dead;
+            bool canWeapon = _human.IsAttackableState && !_illegalWeaponStates.Contains(_human.State) && !_human.Dead;
             _human._gunArmAim = false;
             if (canWeapon)
             {
@@ -241,46 +267,14 @@ namespace Controllers
 
         void UpdateReelInput()
         {
-            _reelOutScrollTimeLeft -= Time.deltaTime;
-            if (_reelOutScrollTimeLeft <= 0f)
-                _human.ReelOutAxis = 0f;
-            if (_humanInput.ReelIn.GetKey())
+            if (ReelAxis < 0)
             {
                 if (!_human._reelInWaitForRelease)
                     _human.ReelInAxis = -1f;
-                _reelInScrollCooldownLeft = _reelInScrollCooldown;
             }
-            else
+            if (ReelAxis > 0)
             {
-                bool hasScroll = false;
-                _reelInScrollCooldownLeft -= Time.deltaTime;
-                foreach (InputKey inputKey in _humanInput.ReelIn.InputKeys)
-                {
-                    if (inputKey.IsWheel())
-                        hasScroll = true;
-                }
-                foreach (InputKey inputKey in _humanInput.ReelIn.InputKeys)
-                {
-                    if (inputKey.IsWheel())
-                    {
-                        if (_reelInScrollCooldownLeft <= 0f)
-                            _human._reelInWaitForRelease = false;
-                    }
-                    else
-                    {
-                        if (!hasScroll || inputKey.GetKeyUp())
-                            _human._reelInWaitForRelease = false;
-                    }
-                }
-            }
-            foreach (InputKey inputKey in _humanInput.ReelOut.InputKeys)
-            {
-                if (inputKey.GetKey())
-                {
-                    _human.ReelOutAxis = 1f;
-                    if (inputKey.IsWheel())
-                        _reelOutScrollTimeLeft = SettingsManager.InputSettings.Human.ReelOutScrollSmoothing.Value;
-                }
+                _human.ReelOutAxis = 1f;
             }
         }
 
@@ -289,7 +283,7 @@ namespace Controllers
             if (!_human.Grounded && _human.State != HumanState.AirDodge && _human.MountState == HumanMountState.None && _human.State != HumanState.Grab && _human.CarryState != HumanCarryState.Carry
                 && _human.State != HumanState.Stun && _human.State != HumanState.EmoteAction && _human.State != HumanState.SpecialAction && !_human.Dead)
             {
-                if (DashDirection!=null)
+                if (DashDirection != null)
                 {
                     Vector3 direction = (Vector3)DashDirection;
                     if (_human.Stats.Perks["OmniDash"].CurrPoints == 1)
@@ -319,6 +313,439 @@ namespace Controllers
         bool IsSpin3Special()
         {
             return _human.State == HumanState.SpecialAttack && _human.Special is Spin3Special;
+        }
+
+        void DefaultAction()
+        {
+            MoveDirection = null;
+            SetAimDirection(_human.transform.forward);
+            DashDirection = null;
+            DoHorseMount = false;
+            DoJump = false;
+            DoAttack = false;
+            DoSpecial = false;
+            DoHorseMount = false;
+            DoDodge = false;
+            DoReload = false;
+            ReelAxis = 0;
+            if (Target != null)
+            {
+                if (Target is BaseTitan titan)
+                {
+                    TargetPosition = titan.BaseTitanCache.NapeHurtbox.transform.position;
+                }
+                else
+                {
+                    TargetPosition = Target.GetPosition();
+                }
+                TargetDirection = TargetPosition - _human.Cache.Transform.position;
+            }
+        }
+
+        void ResetAction()
+        {
+            DefaultAction();
+            DoHookLeft = false;
+            DoHookRight = false;
+            DoHookBoth = false;
+        }
+
+        public void Attack()
+        {
+            DoAttack = true;
+        }
+
+        public void SetAimDirection(Vector3 direction)
+        {
+            AimDirection = direction;
+            _human.AIAimPoint = _human.transform.position + 10 * AimDirection;
+        }
+
+        public void SetAimPoint(Vector3 position)
+        {
+            _human.AIAimPoint = position;
+            AimDirection = position - _human.transform.position;
+        }
+
+        public void Move(Vector3 direction)
+        {
+            MoveDirection = direction;
+        }
+
+        public void Jump()
+        {
+            DoJump = true;
+        }
+
+        public void Dodge(Vector3 direction)
+        {
+            MoveDirection = direction;
+            DashDirection = direction;
+            DoDodge = true;
+        }
+
+        public void Reel(int reelAxis)
+        {
+            ReelAxis = reelAxis;
+        }
+
+        public void ReelIn()
+        {
+            Reel(-1);
+        }
+
+        public void ReelOut()
+        {
+            Reel(1);
+        }
+
+        public bool LaunchHookLeft(Vector3 position)
+        {
+            if (_human.HookLeft.HookReady())
+            {
+                SetAimPoint(position);
+                DoHookLeft = true;
+                return true;
+            }
+            return false;
+        }
+
+        public bool LaunchHookRight(Vector3 position)
+        {
+            if (_human.HookRight.HookReady())
+            {
+                SetAimPoint(position);
+                DoHookRight = true;
+                return true;
+            }
+            return false;
+        }
+
+        public bool LaunchHook(Vector3 position)
+        {
+            if (_hookLeftTimer <= 0 && _human.HookLeft.HookReady())
+            {
+                _hookLeftTimer = 0.8f;
+                return LaunchHookLeft(position);
+            }
+            else if (_hookRightTimer <= 0 && _human.HookRight.HookReady())
+            {
+                _hookRightTimer = 0.8f;
+                return LaunchHookRight(position);
+            }
+            return false;
+        }
+
+        public void ReleaseHookLeft()
+        {
+            DoHookLeft = false;
+        }
+
+        public void ReleaseHookRight()
+        {
+            DoHookRight = false;
+        }
+
+        public void ReleaseHookAll()
+        {
+            DoHookLeft = false;
+            DoHookRight = false;
+        }
+
+        public bool IsHookedTarget(HookUseable hook, bool needNape = false)
+        {
+            if (hook.IsHooked() && Target != null)
+            {
+                if (Target is MapTargetable target)
+                {
+                    return Vector3.Distance(target.GetPosition(), hook.GetHookPosition()) < 10.0f;
+                }
+                else if (Target is BaseCharacter character)
+                {
+                    if (needNape && Target is BaseTitan titan)
+                    {
+                        return Vector3.Distance(titan.BaseTitanCache.NapeHurtbox.transform.position, hook.GetHookPosition()) < 6.0f;
+                    }
+                    else
+                    {
+                        return hook.GetHookCharacter() == character;
+                    }
+                }
+            }
+            return false;
+        }
+
+
+        protected override void FixedUpdate()
+        {
+            DefaultAction();
+        }
+
+        public bool IsTargetValid()
+        {
+            if (Target == null)
+            {
+                return false;
+            }
+
+            if (Target is BaseCharacter target)
+            {
+                if (target.CurrentHealth <= 0)
+                {
+                    return false;
+                }
+            }
+            return Target.ValidTarget();
+        }
+
+        public void JumpTo(Vector3 position)
+        {
+            var humanPosition = _human.Cache.Transform.position;
+            var direction = position - humanPosition;
+            direction.y = 0;
+            Move(direction.normalized);
+            Jump();
+        }
+
+        public void RandomJump(bool actionInAir, float forward)
+        {
+            if (_human.Grounded)
+            {
+                var randAngle = Random.Range(-80f, 80f) * Mathf.Deg2Rad;
+                var randomDirection = new Vector3(Mathf.Sin(randAngle), 0f, Mathf.Cos(randAngle)) * forward;
+                var q = Quaternion.LookRotation(new Vector3(TargetDirection.x, 0f, TargetDirection.z).normalized);
+                Move(q * randomDirection);
+                Jump();
+            }
+            else if (actionInAir)
+            {
+                RaycastHit result;
+                var isHit = Physics.Linecast(_human.transform.position + new Vector3(0f, 0.1f, 0f), _human.transform.position + new Vector3(0f, -10f, 0f), out result, BarrierMask);
+                if (isHit && result.distance < 7)
+                {
+                    var velocity = _human.Cache.Rigidbody.velocity;
+                    velocity.y = 0;
+                    velocity = velocity.normalized;
+                    var targetDirection = new Vector3(TargetDirection.x, 0f, TargetDirection.z).normalized;
+                    var angle = Vector3.Angle(velocity, targetDirection);
+                    var randAngle = Random.Range(0f, 80f) * Mathf.Deg2Rad;
+                    var v = Vector3.RotateTowards(velocity, targetDirection, randAngle, 0f);
+                    Move(v);
+                }
+                else
+                {
+                    var velocity = _human.Cache.Rigidbody.velocity;
+                    velocity = velocity.normalized;
+                    var targetDirection = TargetDirection.normalized;
+                    var angle = Vector3.Angle(velocity, targetDirection);
+                    var randAngle = Random.Range(0f, 80f) * Mathf.Deg2Rad;
+                    var v = Vector3.RotateTowards(velocity, targetDirection, randAngle, 0f);
+                    Dodge(v);
+                }
+            }
+        }
+
+        public Vector3 GetHookPosition()
+        {
+            Vector3 hookPosition = Vector3.zero;
+            if (_human.IsHookedAny())
+            {
+                if (!_human.IsHookedLeft()) // HookedRight
+                {
+                    hookPosition = _human.HookRight.GetHookPosition();
+                }
+                else if (!_human.IsHookedRight())
+                {
+                    hookPosition = _human.HookLeft.GetHookPosition();
+                }
+                else
+                {
+                    hookPosition = 0.5f * (_human.HookLeft.GetHookPosition() + _human.HookRight.GetHookPosition());
+                }
+            }
+            return hookPosition;
+        }
+
+
+        public void StraightFlight(Vector3 position, float tolAngle)
+        {
+            if (_human.Grounded)
+            {
+                JumpTo(position);
+                ReleaseHookAll();
+                return;
+            }
+            var humanPosition = _human.transform.position;
+            var direction = position - humanPosition;
+            var velocity = _human.Cache.Rigidbody.velocity;
+            if (_human.HasHook() || Vector3.Angle(direction, velocity) < tolAngle)
+            {
+                Move(direction.normalized);
+                if (_human.IsHookedAny())
+                {
+                    ReelOut();
+                }
+            }
+            if (_human.IsHookedAny())
+            {
+                var hookPosition = GetHookPosition();
+                var distance2hook = Vector3.Distance(hookPosition, humanPosition);
+                if (distance2hook > 5.0)
+                {
+                    if (_human.Pivot)
+                    {
+                        var reelInVelocity = CalcReelVelocity(_human.transform.position, hookPosition, velocity, -1f);
+                        var isHit = Physics.Linecast(humanPosition, humanPosition + reelInVelocity.normalized * direction.magnitude, BarrierMask);
+                        if (!isHit && Vector3.Angle(direction, reelInVelocity) < tolAngle)
+                        {
+                            ReelIn();
+                            return;
+                        }
+                        ReleaseHookAll();
+                    }
+                }
+                else
+                {
+                    ReleaseHookAll();
+                }
+            }
+
+            if (!_human.HasHook())
+            {
+                if (Vector3.Angle(direction, velocity) <= 90)
+                {
+                    Dodge(direction.normalized);
+                }
+                var directionQuaternion = Quaternion.LookRotation(direction.normalized);
+                var randomAngle = Random.Range(16.0f, 45.0f) * RandomGen.GetRandomSign();
+                var randomDirection = new Vector3(math.sin(randomAngle), 0f, math.cos(randomAngle));
+                randomDirection = directionQuaternion * randomDirection;
+                var hookPosition = humanPosition + randomDirection * DetectDistance;
+                if (Physics.Linecast(humanPosition + randomDirection.normalized * 5f, hookPosition, BarrierMask))
+                {
+                    LaunchHook(hookPosition);
+                }
+            }
+        }
+
+        public bool DetectDirection(Vector3 direction, float startOffset,
+        float endOffset, out RaycastHit result)
+        {
+            //Tips: Get GlobalDirection: self.Core.TransformDirection(localDirection)
+            var start = Human.Cache.Transform.position + direction.normalized * startOffset;
+            var end = Human.Cache.Transform.position + direction.normalized * (DetectDistance + endOffset);
+            return Physics.Linecast(start, end, out result, BarrierMask);
+        }
+
+        /*
+        targetPosition : World Position of Target;
+        hookPosition: world position of hook. refer to pivot;
+        velocity: character velocity;
+        attackDistance: max atack distance
+        predictedLaps: #Laps to predict if doing the pivot movement. e.g. 0.4 mean predict 0.4 laps
+        predictDense: #points to predict;
+        return second left to activate hitbox, If the best time is missed, it will return negative.
+        */
+        public static float PredictAttackOpportunity(Vector3 start, Vector3 targetPosition, Vector3 velocity, Vector3 hookPosition, float attackDistance, float predictedLaps, float predictDense)
+        {
+            if (velocity.magnitude <= 0.1)
+            {
+                return Mathf.Infinity;
+            }
+            var targetDirection = targetPosition - start;
+            var targetProject = Vector3.Project(targetDirection, velocity);
+            var closestDirection = targetDirection - targetProject;
+            var closestDistance = closestDirection.magnitude;
+            var distance2Closest = targetProject.magnitude;
+            if (hookPosition != null)
+            {
+                var hookDirection = hookPosition - start;
+                var hookProject = Vector3.Project(hookDirection, velocity);
+                var radiusDirection = hookDirection - hookProject;
+                var radius = radiusDirection.magnitude;
+                var shortestDistance2Lap = hookProject.magnitude;
+                if (distance2Closest > shortestDistance2Lap)
+                {
+                    var lapT = Mathf.Infinity;
+                    predictDense += 1;
+                    var T = 2 * Mathf.PI * radius / velocity.magnitude;
+                    var i = 1f;
+                    while (i < predictDense)
+                    {
+                        var N = i / predictDense * predictedLaps;
+                        var pos = CalcRoundPoints(start, hookPosition, velocity, N);
+                        var distance = Vector3.Distance(pos, targetPosition);
+                        if (distance < attackDistance)
+                        {
+                            lapT = N * T;
+                            i = predictDense;
+                        }
+                        i += 1;
+                    }
+                    var t0 = shortestDistance2Lap / velocity.magnitude;
+                    return lapT + t0;
+                }
+            }
+
+            if (closestDistance < attackDistance && Vector3.Angle(targetProject, velocity) <= 90)
+            {
+                // About advanceDistance: The attackDistance is greater than the sqrt(closestDistance^2, advanceDistance^2).
+                var advanceDistance = attackDistance - closestDistance;
+                return (distance2Closest - advanceDistance) / velocity.magnitude;
+            }
+
+            return Mathf.Infinity;
+        }
+
+        /*
+    return radius vector that start from human and points at hookPosition
+    */
+        public static Vector3 CalcCircleRadius(Vector3 start, Vector3 hookPosition, Vector3 velocity)
+        {
+            return ShortestDistance(hookPosition - start, velocity);
+        }
+
+        /*
+        return shotest distance from point a to direction b
+        */
+        public static Vector3 ShortestDistance(Vector3 a, Vector3 b)
+        {
+            return a - Vector3.Project(a, b);
+        }
+
+        public static Vector3 CorrectHookPosition(Vector3 start, Vector3 hookPosition, Vector3 targetVelocity, float hookSpeed)
+        {
+            if (targetVelocity.magnitude < 0.1f)
+            {
+                return hookPosition;
+            }
+            var hookingDistance = Vector3.Distance(hookPosition, start);
+            float t = hookingDistance / hookSpeed;
+            return hookPosition + t * targetVelocity;
+        }
+
+        public static Vector3 CalcReelVelocity(Vector3 start, Vector3 hookPosition, Vector3 velocity, float reelAxis)
+        {
+            float addSpeed = 0.1f;
+            float newSpeed = velocity.magnitude + addSpeed;
+            var v = hookPosition - (start - new Vector3(0f, 0.02f, 0f));
+            float reel = Mathf.Clamp(reelAxis, -0.8f, 0.8f) + 1f;
+            v = Vector3.RotateTowards(v, velocity, 1.53938f * reel, 1.53938f * reel).normalized;
+            return v * newSpeed;
+        }
+        /*
+        N: Rotation period;
+        return End Position;
+        */
+        public static Vector3 CalcRoundPoints(Vector3 start, Vector3 hookPosition, Vector3 velocity, float N)
+        {
+            var CP = start - hookPosition;
+            var rotationAxis = Vector3.Cross(CP, velocity).normalized;
+            // var  speedMagnitude = V.magnitude;
+            // var  radius = CP.magnitude;
+            // var angularSpeed = speedMagnitude / radius;
+            var circle = 2 * math.PI * N;
+            return hookPosition + Mathf.Cos(circle) * CP + Mathf.Sin(circle) * Vector3.Cross(rotationAxis, CP) + (1 - Mathf.Cos(circle)) * Vector3.Dot(rotationAxis, CP) * rotationAxis;
         }
     }
 }
