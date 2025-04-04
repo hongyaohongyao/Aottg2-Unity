@@ -53,7 +53,7 @@ namespace Controllers
         public float _hookLeftTimer = 0f;
         public float _hookRightTimer = 0f;
 
-        public FSM fsm;
+        public Automaton Automaton;
 
         public ITargetable Target;
 

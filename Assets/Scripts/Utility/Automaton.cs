@@ -5,14 +5,14 @@ using UnityEditorInternal;
 
 namespace Utility
 {
-    public class FSM
+    public class Automaton
     {
-        public List<FSMState> States = new();
-        public FSMState State;
+        public List<AutomationState> States = new();
+        public AutomationState State;
 
-        protected FSMState _defaultState = null;
+        protected AutomationState _defaultState = null;
 
-        public virtual FSMState DefaultState
+        public virtual AutomationState DefaultState
         {
             get
             {
@@ -34,24 +34,24 @@ namespace Utility
             States.Clear();
         }
 
-        public int AddState(FSMState state)
+        public int AddState(AutomationState state)
         {
             int code = States.Count;
             States.Add(state);
             return code;
         }
 
-        public FSMState GetState(int stateCode)
+        public AutomationState GetState(int stateCode)
         {
             return States[stateCode];
         }
 
-        public int GetStateCode(FSMState state)
+        public int GetStateCode(AutomationState state)
         {
             return States.IndexOf(state);
         }
 
-        public virtual void SwitchState(FSMState nextState)
+        public virtual void SwitchState(AutomationState nextState)
         {
             if (State == nextState)
             {
@@ -69,7 +69,7 @@ namespace Utility
             }
         }
 
-        public virtual FSMState NextState()
+        public virtual AutomationState Action()
         {
             if (State == null)
             {
@@ -82,14 +82,14 @@ namespace Utility
             return State;
         }
     }
-    public class FSMState
+    public class AutomationState
     {
-        public FSM FSM;
+        public Automaton Automation;
 
 
-        public FSMState(FSM fsm)
+        public AutomationState(Automaton automaton)
         {
-            FSM = fsm;
+            Automation = automaton;
         }
         public virtual void StateStart()
         {
@@ -101,9 +101,9 @@ namespace Utility
 
         }
 
-        public virtual FSMState StateAction()
+        public virtual AutomationState StateAction()
         {
-            return FSM.DefaultState;
+            return Automation.DefaultState;
         }
     }
 }

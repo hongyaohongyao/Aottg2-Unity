@@ -8,16 +8,16 @@ namespace Controllers
 {
     namespace HumanAIActions
     {
-        class HumanAIFinding : FSMState
+        class HumanAIFinding : AutomationState
         {
             protected HumanAIController _controller;
             protected Human _human;
-            protected FSMState lastAction = null;
+            protected AutomationState lastAction = null;
             protected Vector3? tempTargetPosition = null;
 
             protected float tempTargetTimer;
 
-            public HumanAIFinding(FSM fsm, HumanAIController controller) : base(fsm)
+            public HumanAIFinding(Automaton automaton, HumanAIController controller) : base(automaton)
             {
                 SetController(controller);
             }
@@ -35,13 +35,13 @@ namespace Controllers
             }
 
 
-            public override FSMState StateAction()
+            public override AutomationState StateAction()
             {
                 if (tempTargetTimer > 0)
                     tempTargetTimer -= Time.deltaTime;
                 if (!_controller.IsTargetValid() || _controller.TargetDirection.magnitude < _controller.LockingDistance)
                 {
-                    return FSM.DefaultState;
+                    return Automation.DefaultState;
                 }
                 if (NeedFindTempTarget())
                 {

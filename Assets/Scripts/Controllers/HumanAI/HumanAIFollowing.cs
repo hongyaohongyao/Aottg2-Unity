@@ -8,7 +8,7 @@ namespace Controllers
 {
     namespace HumanAIActions
     {
-        class HumanAIFollowing : FSMState
+        class HumanAIFollowing : AutomationState
         {
             protected HumanAIController _controller;
             protected Human _human;
@@ -18,7 +18,7 @@ namespace Controllers
 
             protected float _hookedTimer = 0.0f;
 
-            public HumanAIFollowing(FSM fsm, HumanAIController controller) : base(fsm)
+            public HumanAIFollowing(Automaton automaton, HumanAIController controller) : base(automaton)
             {
                 SetController(controller);
             }
@@ -36,16 +36,16 @@ namespace Controllers
                 groundingPosition = null;
             }
 
-            public override FSMState StateAction()
+            public override AutomationState StateAction()
             {
                 var Target = _controller.Target;
                 if (!_controller.IsTargetValid())
                 {
-                    return FSM.DefaultState;
+                    return Automation.DefaultState;
                 }
                 if (Vector3.Distance(_human.transform.position, _controller.TargetPosition) > _controller.LockingDistance)
                 {
-                    return FSM.GetState((int)HumanAIStates.Finding);
+                    return Automation.GetState((int)HumanAIStates.Finding);
                 }
                 var targetDirection = _controller.TargetDirection;
                 var targetDirectionH = new Vector3(targetDirection.x, 0f, targetDirection.z);

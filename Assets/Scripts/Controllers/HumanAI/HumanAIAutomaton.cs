@@ -5,7 +5,7 @@ using Controllers.HumanAIActions;
 
 namespace Controllers
 {
-    class HumanAIFSM : FSM
+    class HumanAIAutomaton : Automaton
     {
         protected HumanAIController _controller;
         public void Init(HumanAIController controller)

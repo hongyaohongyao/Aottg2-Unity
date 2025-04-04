@@ -8,12 +8,12 @@ namespace Controllers
 {
     namespace HumanAIActions
     {
-        class HumanAILocking : FSMState
+        class HumanAILocking : AutomationState
         {
             protected HumanAIController _controller;
             protected Human _human;
 
-            public HumanAILocking(FSM fsm, HumanAIController controller) : base(fsm)
+            public HumanAILocking(Automaton automaton, HumanAIController controller) : base(automaton)
             {
                 SetController(controller);
             }
@@ -24,16 +24,16 @@ namespace Controllers
                 _human = controller.Human;
             }
 
-            public override FSMState StateAction()
+            public override AutomationState StateAction()
             {
                 var Target = _controller.Target;
                 if (!_controller.IsTargetValid())
                 {
-                    return FSM.DefaultState;
+                    return Automation.DefaultState;
                 }
                 if (Vector3.Distance(_human.transform.position, _controller.TargetPosition) > _controller.LockingDistance)
                 {
-                    return FSM.GetState((int)HumanAIStates.Finding);
+                    return Automation.GetState((int)HumanAIStates.Finding);
                 }
                 if (Target is Human h)
                 {
@@ -43,10 +43,10 @@ namespace Controllers
                 {
                     return LockingTitan(t);
                 }
-                return FSM.DefaultState;
+                return Automation.DefaultState;
             }
 
-            public FSMState LockingHuman(Human target)
+            public AutomationState LockingHuman(Human target)
             {
                 var humanPosition = _human.transform.position;
                 var targetPosition = _controller.TargetPosition;
@@ -91,9 +91,9 @@ namespace Controllers
                 return this;
             }
 
-            public FSMState LockingTitan(BaseTitan target)
+            public AutomationState LockingTitan(BaseTitan target)
             {
-                return FSM.DefaultState;
+                return Automation.DefaultState;
             }
         }
     }
