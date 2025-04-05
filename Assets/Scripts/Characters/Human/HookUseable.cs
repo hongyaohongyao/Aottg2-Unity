@@ -47,7 +47,7 @@ namespace Characters
         }
 
         public bool HookReady(){
-            return _activeHook != null && _activeHook.State == HookState.Disabled;
+            return _activeHook == null ||  _activeHook.State == HookState.Disabled;
         }
 
         public HookState GetHookState()

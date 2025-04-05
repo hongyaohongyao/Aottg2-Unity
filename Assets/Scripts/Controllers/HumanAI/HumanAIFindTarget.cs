@@ -17,7 +17,7 @@ namespace Controllers
 
             public override AutomationState StateAction()
             {
-                if (_controller.IsTargetValid())
+                if (!_controller.IsTargetValid())
                 {
                     _controller.Target = _controller.FindNearestEnemy();
                 }

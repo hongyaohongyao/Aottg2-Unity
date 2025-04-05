@@ -24,8 +24,10 @@ namespace Controllers
             {
                 if (!_controller.IsTargetValid())
                 {
+                    // Debug.Log("FindingTarget");
                     return Automation.GetState(HumanAIStates.FindTarget);
                 }
+                // Debug.Log("FindTarget");
                 return Automation.GetState(HumanAIStates.Locking);
             }
 

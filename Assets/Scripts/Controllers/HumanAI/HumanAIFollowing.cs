@@ -55,6 +55,18 @@ namespace Controllers
                 }
                 else if (inRange)
                 {
+                    var start = humanPosition + targetDirection.normalized;
+                    var end = humanPosition + targetDirection + targetDirection.normalized * 10.0f;
+                    if (Physics.Linecast(start, end, out RaycastHit result, HumanAIController.BarrierMask))
+                    {
+                        if (result.distance < 1f)
+                        {
+                            var v = -targetDirectionH.normalized;
+                            v.y = 1.0f;
+                            _controller.Dodge(v);
+                            return this;
+                        }
+                    }
                     if (targetDirection.y > 5f)
                     {
                         if (_human.IsHookedAny())
@@ -162,9 +174,9 @@ namespace Controllers
                         }
                         else if (!_human.IsHookingAny() && _human.IsHookReady())
                         {
-                            var start = humanPosition + targetDirection.normalized * 2f;
-                            var end = humanPosition + targetDirection.normalized * _controller.LockingDistance;
-                            if (Physics.Linecast(start, end, out RaycastHit result, HumanAIController.BarrierMask))
+                            start = humanPosition + targetDirection.normalized * 2f;
+                            end = humanPosition + targetDirection.normalized * _controller.LockingDistance;
+                            if (Physics.Linecast(start, end, out result, HumanAIController.BarrierMask))
                             {
                                 var target2PointDistance = Vector3.Distance(result.point, targetPosition);
                                 if (target2PointDistance < 1f)

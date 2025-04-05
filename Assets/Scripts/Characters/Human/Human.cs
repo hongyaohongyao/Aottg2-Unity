@@ -161,12 +161,12 @@ namespace Characters
 
         public bool HoldLeft = false;
         public bool HoldRight = false;
-
-        public Vector3 AIAimPoint;
+        public Vector3? CustomAimPoint;
 
         protected override void CreateDetection()
         {
-            Detection = new HumanDetection(this);
+            // Detection = new HumanDetection(this);
+            Detection = new HumanDetection(this, true, false);
         }
 
         public void DieChangeCharacter()
@@ -243,9 +243,9 @@ namespace Characters
 
         public override Vector3 GetAimPoint()
         {
-            if (AI)
+            if (CustomAimPoint != null)
             {
-                return AIAimPoint;
+                return (Vector3)CustomAimPoint;
             }
             RaycastHit hit;
             Ray ray = GetAimRayAfterHumanCheap(); // SceneLoader.CurrentCamera.Camera.ScreenPointToRay(Input.mousePosition);
@@ -1019,6 +1019,8 @@ namespace Characters
             Setup.Copy(settings);
             if (!ai)
                 gameObject.AddComponent<HumanPlayerController>();
+            else
+                gameObject.AddComponent<HumanAIController>();
         }
 
         public void ReloadHuman(InGameCharacterSettings settings)

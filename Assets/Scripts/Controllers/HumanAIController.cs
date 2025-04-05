@@ -12,6 +12,7 @@ using Map;
 using Random = UnityEngine.Random;
 using Discord;
 using UnityEditor.UI;
+using System;
 
 namespace Controllers
 {
@@ -22,7 +23,7 @@ namespace Controllers
         {
             get { return _human; }
         }
-        protected HumanInputSettings _humanInput;
+        // protected HumanInputSettings _humanInput;
         public static readonly LayerMask BarrierMask = PhysicsLayer.GetMask(PhysicsLayer.Human, PhysicsLayer.TitanPushbox, PhysicsLayer.ProjectileDetection,
             PhysicsLayer.MapObjectProjectiles, PhysicsLayer.MapObjectEntities, PhysicsLayer.MapObjectAll);
 
@@ -53,7 +54,7 @@ namespace Controllers
         public float _hookLeftTimer = 0f;
         public float _hookRightTimer = 0f;
 
-        public Automaton Automaton;
+        public HumanAIAutomaton Automaton;
 
         public ITargetable Target;
 
@@ -62,7 +63,7 @@ namespace Controllers
 
         public float LockingDistance = 100f;
 
-        public float DetectRange = 200f;
+        public float DetectRange = 10000f;
 
         public float HookSpeed = 150f;
 
@@ -75,7 +76,11 @@ namespace Controllers
         {
             base.Awake();
             _human = GetComponent<Human>();
-            _humanInput = SettingsManager.InputSettings.Human;
+            _human.Stats.Perks["OmniDash"].CurrPoints = 1;
+            Automaton = new HumanAIAutomaton();
+            Automaton.Init(this);
+            Automaton.DefaultState = Automaton.GetState(HumanAIStates.Battle);
+            // _humanInput = SettingsManager.InputSettings.Human;
         }
 
 
@@ -318,7 +323,7 @@ namespace Controllers
         void DefaultAction()
         {
             MoveDirection = null;
-            SetAimDirection(_human.transform.forward);
+            SetAimDirection(null);
             DashDirection = null;
             DoHorseMount = false;
             DoJump = false;
@@ -355,16 +360,33 @@ namespace Controllers
             DoAttack = true;
         }
 
-        public void SetAimDirection(Vector3 direction)
+        public void SetAimDirection(Vector3? direction)
         {
-            AimDirection = direction;
-            _human.AIAimPoint = _human.transform.position + 10 * AimDirection;
+            if (direction != null)
+            {
+                AimDirection = (Vector3)direction;
+                _human.CustomAimPoint = _human.transform.position + 10 * AimDirection;
+            }
+            else
+            {
+                AimDirection = Vector3.zero;
+                _human.CustomAimPoint = null;
+            }
+
         }
 
-        public void SetAimPoint(Vector3 position)
+        public void SetAimPoint(Vector3? position)
         {
-            _human.AIAimPoint = position;
-            AimDirection = position - _human.transform.position;
+            if (position != null)
+            {
+                _human.CustomAimPoint = position;
+                AimDirection = (Vector3)position - _human.transform.position;
+            }
+            else
+            {
+                AimDirection = Vector3.zero;
+                _human.CustomAimPoint = null;
+            }
         }
 
         public void Move(Vector3 direction)
@@ -396,7 +418,10 @@ namespace Controllers
 
         public void ReelOut()
         {
-            Reel(1);
+            if (ReelAxis >= 0)
+            {
+                Reel(1);
+            }
         }
 
         public bool LaunchHookLeft(Vector3 position)
@@ -405,6 +430,7 @@ namespace Controllers
             {
                 SetAimPoint(position);
                 DoHookLeft = true;
+                UpdateHookInput();
                 return true;
             }
             return false;
@@ -416,6 +442,7 @@ namespace Controllers
             {
                 SetAimPoint(position);
                 DoHookRight = true;
+                UpdateHookInput();
                 return true;
             }
             return false;
@@ -508,6 +535,9 @@ namespace Controllers
         protected override void FixedUpdate()
         {
             DefaultAction();
+            _hookLeftTimer -= Time.deltaTime;
+            _hookRightTimer -= Time.deltaTime;
+            Automaton.Action();
         }
 
         public bool IsTargetValid()
@@ -596,7 +626,7 @@ namespace Controllers
         }
 
 
-        public void StraightFlight(Vector3 position, float tolAngle)
+        public void StraightFlight(Vector3 position, float tolAngle, bool useDash=false)
         {
             if (_human.Grounded)
             {
@@ -604,6 +634,7 @@ namespace Controllers
                 ReleaseHookAll();
                 return;
             }
+            Jump();
             var humanPosition = _human.transform.position;
             var direction = position - humanPosition;
             var velocity = _human.Cache.Rigidbody.velocity;
@@ -624,8 +655,9 @@ namespace Controllers
                     if (_human.Pivot)
                     {
                         var reelInVelocity = CalcReelVelocity(_human.transform.position, hookPosition, velocity, -1f);
-                        var isHit = Physics.Linecast(humanPosition, humanPosition + reelInVelocity.normalized * direction.magnitude, BarrierMask);
-                        if (!isHit && Vector3.Angle(direction, reelInVelocity) < tolAngle)
+                        // var isHit = Physics.Linecast(humanPosition, humanPosition + reelInVelocity.normalized * direction.magnitude, BarrierMask);
+                        // if (!isHit && Vector3.Angle(direction, reelInVelocity) < tolAngle)
+                        if (Vector3.Angle(direction, reelInVelocity) < tolAngle)
                         {
                             ReelIn();
                             return;
@@ -641,15 +673,15 @@ namespace Controllers
 
             if (!_human.HasHook())
             {
-                if (Vector3.Angle(direction, velocity) <= 90)
+                if (useDash && Vector3.Angle(direction, velocity) <= 90)
                 {
                     Dodge(direction.normalized);
                 }
                 var directionQuaternion = Quaternion.LookRotation(direction.normalized);
-                var randomAngle = Random.Range(16.0f, 45.0f) * RandomGen.GetRandomSign();
-                var randomDirection = new Vector3(math.sin(randomAngle), 0f, math.cos(randomAngle));
+                var randomAngle = Random.Range(16.0f, 45.0f) * RandomGen.GetRandomSign() * Mathf.Deg2Rad;
+                var randomDirection = new Vector3(Mathf.Sin(randomAngle), 0f, Mathf.Cos(randomAngle));
                 randomDirection = directionQuaternion * randomDirection;
-                var hookPosition = humanPosition + randomDirection * DetectRange;
+                var hookPosition = humanPosition + randomDirection * 115f;
                 if (Physics.Linecast(humanPosition + randomDirection.normalized * 5f, hookPosition, BarrierMask))
                 {
                     LaunchHook(hookPosition);

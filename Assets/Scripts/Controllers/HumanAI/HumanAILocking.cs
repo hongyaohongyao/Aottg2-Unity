@@ -26,6 +26,10 @@ namespace Controllers
                 {
                     return Automation.GetState(HumanAIStates.Finding);
                 }
+                if (!_human.Grounded)
+                {
+                    _controller.Jump();
+                }
                 if (Target is Human h)
                 {
                     return LockingHuman(h);
@@ -68,7 +72,8 @@ namespace Controllers
 
                     if (targetDirection.magnitude <= 5.0f)
                     {
-                        _controller.Attack();
+                        if (_human.State != HumanState.Attack)
+                            _controller.Attack();
                     }
                     return this;
                 }
