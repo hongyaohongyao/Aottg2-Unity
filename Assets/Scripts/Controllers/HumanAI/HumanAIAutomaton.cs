@@ -15,6 +15,25 @@ namespace Controllers
             AddState(new HumanAIFinding(this, controller));
             AddState(new HumanAILocking(this, controller));
             AddState(new HumanAIFollowing(this, controller));
+            AddState(new HumanAIFindTarget(this, controller));
+            AddState(new HumanAIBattle(this, controller));
+        }
+    }
+
+    class HumanAIAutomatonState : AutomationState
+    {
+        protected HumanAIController _controller;
+        protected Human _human;
+
+        public HumanAIAutomatonState(Automaton automaton, HumanAIController controller) : base(automaton)
+        {
+            SetController(controller);
+        }
+
+        public virtual void SetController(HumanAIController controller)
+        {
+            _controller = controller;
+            _human = controller.Human;
         }
     }
 
@@ -23,6 +42,8 @@ namespace Controllers
         None,
         Finding,
         Locking,
-        Following
+        Following,
+        FindTarget,
+        Battle
     }
 }

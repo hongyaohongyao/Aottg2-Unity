@@ -41,6 +41,11 @@ namespace Utility
             return code;
         }
 
+        public AutomationState GetState(Enum stateCode)
+        {
+            return GetState(Convert.ToInt32(stateCode));
+        }
+
         public AutomationState GetState(int stateCode)
         {
             return States[stateCode];

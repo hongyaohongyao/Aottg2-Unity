@@ -8,24 +8,15 @@ namespace Controllers
 {
     namespace HumanAIActions
     {
-        class HumanAIFinding : AutomationState
+        class HumanAIFinding : HumanAIAutomatonState
         {
-            protected HumanAIController _controller;
-            protected Human _human;
             protected AutomationState lastAction = null;
             protected Vector3? tempTargetPosition = null;
 
             protected float tempTargetTimer;
 
-            public HumanAIFinding(Automaton automaton, HumanAIController controller) : base(automaton)
+            public HumanAIFinding(Automaton automaton, HumanAIController controller) : base(automaton, controller)
             {
-                SetController(controller);
-            }
-
-            public void SetController(HumanAIController controller)
-            {
-                _controller = controller;
-                _human = controller.Human;
             }
 
             public override void StateEnd()

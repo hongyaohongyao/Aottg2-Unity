@@ -8,25 +8,15 @@ namespace Controllers
 {
     namespace HumanAIActions
     {
-        class HumanAIFollowing : AutomationState
+        class HumanAIFollowing : HumanAIAutomatonState
         {
-            protected HumanAIController _controller;
-            protected Human _human;
-
             protected HumanAIFollowingStates state;
             protected Vector3? groundingPosition = null;
 
             protected float _hookedTimer = 0.0f;
 
-            public HumanAIFollowing(Automaton automaton, HumanAIController controller) : base(automaton)
+            public HumanAIFollowing(Automaton automaton, HumanAIController controller) : base(automaton, controller)
             {
-                SetController(controller);
-            }
-
-            public void SetController(HumanAIController controller)
-            {
-                _controller = controller;
-                _human = controller.Human;
             }
 
             public override void StateEnd()
@@ -45,7 +35,7 @@ namespace Controllers
                 }
                 if (Vector3.Distance(_human.transform.position, _controller.TargetPosition) > _controller.LockingDistance)
                 {
-                    return Automation.GetState((int)HumanAIStates.Finding);
+                    return Automation.GetState(HumanAIStates.Finding);
                 }
                 var targetDirection = _controller.TargetDirection;
                 var targetDirectionH = new Vector3(targetDirection.x, 0f, targetDirection.z);

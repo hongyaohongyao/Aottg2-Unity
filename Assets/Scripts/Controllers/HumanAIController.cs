@@ -62,7 +62,7 @@ namespace Controllers
 
         public float LockingDistance = 100f;
 
-        public float DetectDistance = 100f;
+        public float DetectRange = 200f;
 
         public float HookSpeed = 150f;
 
@@ -475,6 +475,35 @@ namespace Controllers
             return false;
         }
 
+        public ITargetable FindNearestEnemy()
+        {
+            Vector3 position = _human.Cache.Transform.position;
+            float nearestDistance = float.PositiveInfinity;
+            ITargetable nearestCharacter = null;
+            var character = _human.Detection.ClosestEnemy;
+            if (character != null && !character.Dead)
+            {
+                float distance = Vector3.Distance(character.Cache.Transform.position, position);
+                if (distance < nearestDistance && distance < DetectRange)
+                {
+                    nearestDistance = distance;
+                    nearestCharacter = character;
+                }
+            }
+            foreach (MapTargetable targetable in MapLoader.MapTargetables)
+            {
+                if (targetable == null || !targetable.ValidTarget())
+                    continue;
+                float distance = Vector3.Distance(targetable.GetPosition(), position);
+                if (distance < nearestDistance && distance < DetectRange)
+                {
+                    nearestDistance = distance;
+                    nearestCharacter = targetable;
+                }
+            }
+            return nearestCharacter;
+        }
+
 
         protected override void FixedUpdate()
         {
@@ -620,7 +649,7 @@ namespace Controllers
                 var randomAngle = Random.Range(16.0f, 45.0f) * RandomGen.GetRandomSign();
                 var randomDirection = new Vector3(math.sin(randomAngle), 0f, math.cos(randomAngle));
                 randomDirection = directionQuaternion * randomDirection;
-                var hookPosition = humanPosition + randomDirection * DetectDistance;
+                var hookPosition = humanPosition + randomDirection * DetectRange;
                 if (Physics.Linecast(humanPosition + randomDirection.normalized * 5f, hookPosition, BarrierMask))
                 {
                     LaunchHook(hookPosition);
@@ -633,7 +662,7 @@ namespace Controllers
         {
             //Tips: Get GlobalDirection: self.Core.TransformDirection(localDirection)
             var start = Human.Cache.Transform.position + direction.normalized * startOffset;
-            var end = Human.Cache.Transform.position + direction.normalized * (DetectDistance + endOffset);
+            var end = Human.Cache.Transform.position + direction.normalized * (DetectRange + endOffset);
             return Physics.Linecast(start, end, out result, BarrierMask);
         }
 

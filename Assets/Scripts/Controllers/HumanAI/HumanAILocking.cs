@@ -8,20 +8,11 @@ namespace Controllers
 {
     namespace HumanAIActions
     {
-        class HumanAILocking : AutomationState
+        class HumanAILocking : HumanAIAutomatonState
         {
-            protected HumanAIController _controller;
-            protected Human _human;
 
-            public HumanAILocking(Automaton automaton, HumanAIController controller) : base(automaton)
+            public HumanAILocking(Automaton automaton, HumanAIController controller) : base(automaton, controller)
             {
-                SetController(controller);
-            }
-
-            public void SetController(HumanAIController controller)
-            {
-                _controller = controller;
-                _human = controller.Human;
             }
 
             public override AutomationState StateAction()
@@ -33,7 +24,7 @@ namespace Controllers
                 }
                 if (Vector3.Distance(_human.transform.position, _controller.TargetPosition) > _controller.LockingDistance)
                 {
-                    return Automation.GetState((int)HumanAIStates.Finding);
+                    return Automation.GetState(HumanAIStates.Finding);
                 }
                 if (Target is Human h)
                 {
