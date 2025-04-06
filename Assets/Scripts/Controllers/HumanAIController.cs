@@ -360,6 +360,11 @@ namespace Controllers
             DoAttack = true;
         }
 
+        public void Special()
+        {
+            DoSpecial = true;
+        }
+
         public void SetAimDirection(Vector3? direction)
         {
             if (direction != null)
