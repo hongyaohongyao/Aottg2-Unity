@@ -74,7 +74,7 @@ namespace Controllers
                 }
             }
 
-            public void AttackHuman(bool isLookingTarget = true)
+            public void AttackEnemy(bool isLookingTarget = true)
             {
                 if (!isLookingTarget)
                 {
@@ -152,7 +152,7 @@ namespace Controllers
                         _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 30f);
                     }
 
-                    AttackHuman();
+                    AttackEnemy();
                     return this;
                 }
                 var start = humanPosition + targetDirection.normalized;
@@ -173,7 +173,7 @@ namespace Controllers
                     {
                         _controller.StraightFlight(_controller.FindTempTarget(result, 1f, 25f), 60f);
                     }
-                    AttackHuman();
+                    AttackEnemy();
                 }
                 else
                 {
@@ -187,57 +187,9 @@ namespace Controllers
                 var humanPosition = _human.transform.position;
                 var targetPosition = _controller.TargetPosition;
                 var targetDirection = _controller.TargetDirection;
-                var hookedTargetL = _controller.IsHookedTarget(_human.HookLeft, true);
-                var hookedTargetR = _controller.IsHookedTarget(_human.HookRight, true);
-                if (hookedTargetL || hookedTargetR)
-                {
-                    if (!hookedTargetL)
-                    {
-                        _controller.ReleaseHookLeft();
-                    }
-                    if (!hookedTargetR)
-                    {
-                        _controller.ReleaseHookRight();
-                    }
-                    var reelInCond = _human.Pivot;
-                    if (reelInCond)
-                    {
-                        _controller.ReelIn();
-                    }
-                    else
-                    {
-                        _controller.RandomJump(false, -1.0f);
-                    }
+                var nape = target.BaseTitanCache.NapeHurtbox;
+                var mouth = target.BaseTitanCache.MouthHitbox;
 
-
-                    if (_human.Cache.Rigidbody.velocity.magnitude < 0.5f)
-                    {
-                        _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 30f);
-                    }
-
-                    AttackHuman();
-                    return this;
-                }
-                var start = humanPosition + targetDirection.normalized;
-                var end = humanPosition + targetDirection.normalized * 120f;
-                if (Physics.Linecast(start, end, out RaycastHit result, HumanAIController.BarrierMask))
-                {
-                    if (_controller.IsLookingAtTarget(result, 1f))
-                    {
-                        var correctPosition = targetPosition;
-                        correctPosition = HumanAIController.CorrectHookPosition(humanPosition, correctPosition, _controller.TargetVelocity, _controller.HookSpeed);
-                        if (_human.HookRight.HookReady())
-                        {
-                            _controller.LaunchHookRight(correctPosition);
-                        }
-                    }
-                    _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 60f);
-                    AttackHuman();
-                }
-                else
-                {
-                    _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 60f);
-                }
                 return this;
             }
         }
