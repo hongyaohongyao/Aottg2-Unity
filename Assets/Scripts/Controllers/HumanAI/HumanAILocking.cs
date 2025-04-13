@@ -38,6 +38,10 @@ namespace Controllers
                 {
                     return this;
                 }
+                else if (_controller.NeedRefill())
+                {
+                    return Automation.DefaultState;
+                }
                 if (Vector3.Distance(_human.transform.position, _controller.TargetPosition) > _controller.LockingDistance)
                 {
                     return Automation.GetState(HumanAIStates.Finding);
@@ -132,8 +136,6 @@ namespace Controllers
                     {
                         _controller.ReleaseHookRight();
                     }
-                    // result = self.Core.LineCast(self.Core.Transform.Position + Vector3(0,0.1,0), self.Core.Transform.Position + Vector3(0.0,-10.0,0.0));
-                    // reelInCond = self.Skills.Pivot && (result == null || (result.Distance > 7.0 || (result.Distance > 2.0 && self.Core.Rigidbody.GetVelocity().Y > 0)));
                     var reelInCond = _human.Pivot;
                     if (reelInCond)
                     {
@@ -154,16 +156,12 @@ namespace Controllers
                     return this;
                 }
                 var start = humanPosition + targetDirection.normalized;
-                var end = humanPosition + targetDirection + targetDirection.normalized * 10f;
+                var end = humanPosition + targetDirection.normalized * 120f;
                 if (Physics.Linecast(start, end, out RaycastHit result, HumanAIController.BarrierMask))
                 {
                     if (_controller.IsLookingAtTarget(result, 1f))
                     {
                         var correctPosition = targetPosition;
-                        // if (_controller.TargetVelocity.magnitude > 0f)
-                        // {
-                        //     Debug.Log("Target V " + _controller.TargetVelocity);
-                        // }
                         correctPosition = HumanAIController.CorrectHookPosition(humanPosition, correctPosition, _controller.TargetVelocity, _controller.HookSpeed);
                         if (_human.HookRight.HookReady())
                         {
@@ -189,8 +187,8 @@ namespace Controllers
                 var humanPosition = _human.transform.position;
                 var targetPosition = _controller.TargetPosition;
                 var targetDirection = _controller.TargetDirection;
-                var hookedTargetL = _controller.IsHookedTarget(_human.HookLeft);
-                var hookedTargetR = _controller.IsHookedTarget(_human.HookRight);
+                var hookedTargetL = _controller.IsHookedTarget(_human.HookLeft, true);
+                var hookedTargetR = _controller.IsHookedTarget(_human.HookRight, true);
                 if (hookedTargetL || hookedTargetR)
                 {
                     if (!hookedTargetL)
@@ -201,8 +199,6 @@ namespace Controllers
                     {
                         _controller.ReleaseHookRight();
                     }
-                    // result = self.Core.LineCast(self.Core.Transform.Position + Vector3(0,0.1,0), self.Core.Transform.Position + Vector3(0.0,-10.0,0.0));
-                    // reelInCond = self.Skills.Pivot && (result == null || (result.Distance > 7.0 || (result.Distance > 2.0 && self.Core.Rigidbody.GetVelocity().Y > 0)));
                     var reelInCond = _human.Pivot;
                     if (reelInCond)
                     {
@@ -213,19 +209,34 @@ namespace Controllers
                         _controller.RandomJump(false, -1.0f);
                     }
 
-                    if (targetDirection.magnitude <= 5.0f)
+
+                    if (_human.Cache.Rigidbody.velocity.magnitude < 0.5f)
                     {
-                        if (_human.State != HumanState.Attack)
-                            _controller.Attack();
+                        _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 30f);
                     }
+
+                    AttackHuman();
                     return this;
                 }
-                _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 30f);
-                var correctPosition = targetPosition;
-                correctPosition = HumanAIController.CorrectHookPosition(humanPosition, correctPosition, _controller.TargetVelocity, _controller.HookSpeed);
-                if (_human.HookRight.HookReady())
+                var start = humanPosition + targetDirection.normalized;
+                var end = humanPosition + targetDirection.normalized * 120f;
+                if (Physics.Linecast(start, end, out RaycastHit result, HumanAIController.BarrierMask))
                 {
-                    _controller.LaunchHookRight(correctPosition);
+                    if (_controller.IsLookingAtTarget(result, 1f))
+                    {
+                        var correctPosition = targetPosition;
+                        correctPosition = HumanAIController.CorrectHookPosition(humanPosition, correctPosition, _controller.TargetVelocity, _controller.HookSpeed);
+                        if (_human.HookRight.HookReady())
+                        {
+                            _controller.LaunchHookRight(correctPosition);
+                        }
+                    }
+                    _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 60f);
+                    AttackHuman();
+                }
+                else
+                {
+                    _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 60f);
                 }
                 return this;
             }

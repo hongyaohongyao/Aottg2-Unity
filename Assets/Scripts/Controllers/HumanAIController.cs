@@ -397,13 +397,22 @@ namespace Controllers
             {
                 return bladeWeapon.CurrentDurability <= 0f;
             }
-            else if (_human.Weapon is ThunderspearWeapon ts)
-            {
-                return !SettingsManager.InGameCurrent.Misc.ThunderspearPVP.Value && ts.RoundLeft <= 0f;
-            }
-            else if (_human.Weapon is AmmoWeapon ammoWeapon)
+            else if (_human.Weapon is AmmoWeapon ammoWeapon && !(_human.Weapon is ThunderspearWeapon && SettingsManager.InGameCurrent.Misc.ThunderspearPVP.Value))
             {
                 return ammoWeapon.RoundLeft <= 0f;
+            }
+            return false;
+        }
+
+        public bool NeedRefill()
+        {
+            if (_human.Weapon is BladeWeapon bladeWeapon)
+            {
+                return bladeWeapon.CurrentDurability <= 0f && bladeWeapon.BladesLeft <= 0;
+            }
+            else if (_human.Weapon is AmmoWeapon ammoWeapon && !(_human.Weapon is ThunderspearWeapon && SettingsManager.InGameCurrent.Misc.ThunderspearPVP.Value))
+            {
+                return ammoWeapon.RoundLeft <= 0f && ammoWeapon.AmmoLeft <= 0f;
             }
             return false;
         }
