@@ -82,7 +82,9 @@ namespace Utility
             }
             if (State != null)
             {
+                DefaultState.ActionStart();
                 SwitchState(State.StateAction());
+                DefaultState.ActionEnd();
             }
             return State;
         }
@@ -109,6 +111,14 @@ namespace Utility
         public virtual AutomationState StateAction()
         {
             return Automation.DefaultState;
+        }
+
+        public virtual void ActionStart()
+        {
+        }
+
+        public virtual void ActionEnd()
+        {
         }
     }
 }

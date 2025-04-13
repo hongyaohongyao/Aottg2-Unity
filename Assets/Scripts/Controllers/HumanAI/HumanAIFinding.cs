@@ -70,77 +70,17 @@ namespace Controllers
             public void FindTempTarget()
             {
                 var humanPosition = _human.Cache.Transform.position;
-                var targetPosition = _controller.TargetPosition;
                 var targetDirection = _controller.TargetDirection;
                 var start = humanPosition + targetDirection.normalized;
-                var end = humanPosition + targetDirection + targetDirection.normalized * 10.0f;
+                var end = humanPosition + targetDirection + targetDirection.normalized * 10f;
                 if (Physics.Linecast(start, end, out RaycastHit result, HumanAIController.BarrierMask))
                 {
-                    var point = result.point;
-                    var target2Point = point - targetPosition;
-                    var self2Point = point - humanPosition;
-                    if (target2Point.magnitude <= 5.0f)
-                    {
-                        // Move to target;
-                        tempTargetPosition = (targetPosition + humanPosition) * 0.5f;
-                        return;
-                    }
-                    else if (self2Point.magnitude <= 90)
-                    {
-                        // Adjust the body position.
-                        var moveDirection = new Vector3(targetDirection.x, Mathf.Max(0.0f, targetDirection.y), targetDirection.z).normalized;
-                        var directionQuaternion = Quaternion.LookRotation(new Vector3(_controller.TargetDirection.x, 0.0f, _controller.TargetDirection.z));
-                        var directionLeft80 = (directionQuaternion * HumanAIController.VectorLeft80).normalized;
-                        var isHit = _controller.DetectDirection(directionLeft80, 5f, 5f, out result);
-                        var maxDistance = Mathf.Infinity;
-                        Vector3? bestDirection = null;
-                        if (!isHit || (result.distance + 5f >= 40f))
-                        {
-                            tempTargetPosition = humanPosition + 35f * directionLeft80;
-                            return;
-                        }
-                        else if (isHit && result.distance < maxDistance)
-                        {
-                            maxDistance = result.distance;
-                            bestDirection = directionLeft80;
-                        }
-                        var directionRight80 = (directionQuaternion * HumanAIController.VectorRight80).normalized;
-                        isHit = _controller.DetectDirection(directionRight80, 5f, 5f, out result);
-                        if (!isHit || (result.distance + 5f >= 40f))
-                        {
-                            tempTargetPosition = humanPosition + 35f * directionRight80;
-                            return;
-                        }
-                        else if (isHit && result.distance < maxDistance)
-                        {
-                            maxDistance = result.distance;
-                            bestDirection = directionRight80;
-                        }
-                        var directionUp80 = (directionQuaternion * HumanAIController.VectorUp80).normalized;
-                        isHit = _controller.DetectDirection(directionUp80, 5f, 5f, out result);
-                        if (!isHit || (result.distance + 5f >= 40f))
-                        {
-                            tempTargetPosition = humanPosition + 35f * directionUp80;
-                            return;
-                        }
-                        else if (isHit && result.distance < maxDistance)
-                        {
-                            maxDistance = result.distance;
-                            bestDirection = directionUp80;
-                        }
-                        if (bestDirection is Vector3 v)
-                        {
-                            _controller.Dodge(v);
-                        }
-                    }
-                    else
-                    {
-                        // Move Closest;
-                        tempTargetPosition = (point + humanPosition) * 0.5f;
-                        return;
-                    }
+                    tempTargetPosition = _controller.FindTempTarget(result, 5f);
                 }
-                tempTargetPosition = null;
+                else
+                {
+                    tempTargetPosition = null;
+                }
             }
         }
     }

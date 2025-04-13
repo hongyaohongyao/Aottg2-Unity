@@ -1018,7 +1018,10 @@ namespace Characters
             base.Init(ai, team);
             Setup.Copy(settings);
             if (!ai)
-                gameObject.AddComponent<HumanPlayerController>();
+            {
+                gameObject.AddComponent<HumanAIController>();
+                // gameObject.AddComponent<HumanPlayerController>();
+            }
             else
                 gameObject.AddComponent<HumanAIController>();
         }

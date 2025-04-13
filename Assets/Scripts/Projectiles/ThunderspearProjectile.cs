@@ -39,6 +39,10 @@ namespace Projectiles
         bool _wasImpact = false;
         bool _wasMaxRange = false;
         bool _isEmbed = false;
+        public bool IsEmbed
+        {
+            get { return _isEmbed; }
+        }
         Transform _embedParent = null;
         Vector3 _embedPosition = Vector3.zero;
         Vector3 _startPosition = Vector3.zero;

@@ -13,6 +13,7 @@ using Random = UnityEngine.Random;
 using Discord;
 using UnityEditor.UI;
 using System;
+using NUnit.Framework;
 
 namespace Controllers
 {
@@ -26,6 +27,7 @@ namespace Controllers
         // protected HumanInputSettings _humanInput;
         public static readonly LayerMask BarrierMask = PhysicsLayer.GetMask(PhysicsLayer.Human, PhysicsLayer.TitanPushbox, PhysicsLayer.ProjectileDetection,
             PhysicsLayer.MapObjectProjectiles, PhysicsLayer.MapObjectEntities, PhysicsLayer.MapObjectAll);
+        public static readonly LayerMask MapMask = PhysicsLayer.GetMask(PhysicsLayer.TitanPushbox, PhysicsLayer.MapObjectProjectiles, PhysicsLayer.MapObjectEntities, PhysicsLayer.MapObjectAll);
 
         public Vector3? MoveDirection = null;
 
@@ -56,10 +58,30 @@ namespace Controllers
 
         public HumanAIAutomaton Automaton;
 
-        public ITargetable Target;
+        protected ITargetable _target;
+
+        public ITargetable Target
+        {
+            get
+            {
+                return _target;
+            }
+            set
+            {
+                _target = value;
+                if (_target != null)
+                {
+                    TargetVelocity = Vector3.zero;
+                    _targetLastPosition = _target.GetPosition();
+                }
+            }
+        }
 
         public Vector3 TargetPosition;
         public Vector3 TargetDirection;
+
+        protected Vector3 _targetLastPosition;
+        public Vector3 TargetVelocity;
 
         public float LockingDistance = 100f;
 
@@ -192,7 +214,7 @@ namespace Controllers
         {
             UpdateHookInput();
             UpdateReelInput();
-            UpdateDashInput();
+            //UpdateDashInput();
             bool canWeapon = _human.IsAttackableState && !_illegalWeaponStates.Contains(_human.State) && !_human.Dead;
             _human._gunArmAim = false;
             if (canWeapon)
@@ -345,6 +367,10 @@ namespace Controllers
                 }
                 TargetDirection = TargetPosition - _human.Cache.Transform.position;
             }
+            else
+            {
+                ReleaseHookAll();
+            }
         }
 
         void ResetAction()
@@ -358,6 +384,28 @@ namespace Controllers
         public void Attack()
         {
             DoAttack = true;
+        }
+
+        public void Reload()
+        {
+            DoReload = true;
+        }
+
+        public bool NeedReload()
+        {
+            if (_human.Weapon is BladeWeapon bladeWeapon)
+            {
+                return bladeWeapon.CurrentDurability <= 0f;
+            }
+            else if (_human.Weapon is ThunderspearWeapon ts)
+            {
+                return !SettingsManager.InGameCurrent.Misc.ThunderspearPVP.Value && ts.RoundLeft <= 0f;
+            }
+            else if (_human.Weapon is AmmoWeapon ammoWeapon)
+            {
+                return ammoWeapon.RoundLeft <= 0f;
+            }
+            return false;
         }
 
         public void Special()
@@ -409,6 +457,7 @@ namespace Controllers
             MoveDirection = direction;
             DashDirection = direction;
             DoDodge = true;
+            UpdateDashInput();
         }
 
         public void Reel(int reelAxis)
@@ -536,10 +585,21 @@ namespace Controllers
             return nearestCharacter;
         }
 
+        protected void FixedUpdateTargetStatus()
+        {
+            if (Target != null)
+            {
+                var targetCurrentPosition = Target.GetPosition();
+                TargetVelocity = (targetCurrentPosition - _targetLastPosition) / Time.deltaTime;
+                _targetLastPosition = targetCurrentPosition;
+            }
+        }
+
 
         protected override void FixedUpdate()
         {
             DefaultAction();
+            FixedUpdateTargetStatus();
             _hookLeftTimer -= Time.deltaTime;
             _hookRightTimer -= Time.deltaTime;
             Automaton.Action();
@@ -631,52 +691,68 @@ namespace Controllers
         }
 
 
-        public void StraightFlight(Vector3 position, float tolAngle, bool useDash=false)
+        public void StraightFlight(Vector3 position, float tolAngle, bool useDash = false, float keepDistance = 5f)
         {
-            if (_human.Grounded)
-            {
-                JumpTo(position);
-                ReleaseHookAll();
-                return;
-            }
-            Jump();
             var humanPosition = _human.transform.position;
             var direction = position - humanPosition;
             var velocity = _human.Cache.Rigidbody.velocity;
-            if (_human.HasHook() || Vector3.Angle(direction, velocity) < tolAngle)
+            var hitBarrier = keepDistance > 0.1f && Physics.Linecast(humanPosition, humanPosition + direction.normalized * keepDistance, MapMask);
+            var hitBarrier2 = keepDistance > 0.1f && Physics.Linecast(humanPosition, humanPosition + direction.normalized * (keepDistance + 5f), MapMask);
+            if (hitBarrier2)
+            {
+                Move(-direction.normalized);
+            }
+            else
             {
                 Move(direction.normalized);
-                if (_human.IsHookedAny())
+            }
+            // if (_human.Grounded)
+            // {
+            //     JumpTo(position);
+            //     ReleaseHookAll();
+            //     return;
+            // }
+            Jump();
+            if (_human.HasHook() || Vector3.Angle(direction, velocity) < tolAngle)
+            {
+                if (_human.IsHookedAny() && !hitBarrier)
                 {
                     ReelOut();
                 }
             }
             if (_human.IsHookedAny())
             {
-                var hookPosition = GetHookPosition();
-                var distance2hook = Vector3.Distance(hookPosition, humanPosition);
-                if (distance2hook > 5.0)
-                {
-                    if (_human.Pivot)
-                    {
-                        var reelInVelocity = CalcReelVelocity(_human.transform.position, hookPosition, velocity, -1f);
-                        // var isHit = Physics.Linecast(humanPosition, humanPosition + reelInVelocity.normalized * direction.magnitude, BarrierMask);
-                        // if (!isHit && Vector3.Angle(direction, reelInVelocity) < tolAngle)
-                        if (Vector3.Angle(direction, reelInVelocity) < tolAngle)
-                        {
-                            ReelIn();
-                            return;
-                        }
-                        ReleaseHookAll();
-                    }
-                }
-                else
+                if (_human.Cache.Rigidbody.velocity.magnitude < 0.5f)
                 {
                     ReleaseHookAll();
                 }
-            }
+                else
+                {
+                    var hookPosition = GetHookPosition();
+                    var distance2hook = Vector3.Distance(hookPosition, humanPosition);
+                    if (distance2hook > 5f)
+                    {
+                        if (_human.Pivot && !hitBarrier)
+                        {
+                            var reelInVelocity = CalcReelVelocity(_human.transform.position, hookPosition, velocity, -1f);
+                            // var isHit = Physics.Linecast(humanPosition, humanPosition + reelInVelocity.normalized * direction.magnitude, BarrierMask);
+                            // if (!isHit && Vector3.Angle(direction, reelInVelocity) < tolAngle)
+                            if (Vector3.Angle(direction, reelInVelocity) < tolAngle)
+                            {
+                                ReelIn();
+                                return;
+                            }
+                            ReleaseHookAll();
+                        }
+                    }
 
-            if (!_human.HasHook())
+                    if (hookPosition.y < humanPosition.y && hookPosition.y < position.y)
+                    {
+                        ReleaseHookAll();
+                    }
+                }
+            }
+            if (!_human.HasHook() && !hitBarrier)
             {
                 if (useDash && Vector3.Angle(direction, velocity) <= 90)
                 {
@@ -700,7 +776,7 @@ namespace Controllers
             //Tips: Get GlobalDirection: self.Core.TransformDirection(localDirection)
             var start = Human.Cache.Transform.position + direction.normalized * startOffset;
             var end = Human.Cache.Transform.position + direction.normalized * (DetectRange + endOffset);
-            return Physics.Linecast(start, end, out result, BarrierMask);
+            return Physics.Linecast(start, end, out result, MapMask);
         }
 
         /*
@@ -812,6 +888,39 @@ namespace Controllers
             // var angularSpeed = speedMagnitude / radius;
             var circle = 2 * math.PI * N;
             return hookPosition + Mathf.Cos(circle) * CP + Mathf.Sin(circle) * Vector3.Cross(rotationAxis, CP) + (1 - Mathf.Cos(circle)) * Vector3.Dot(rotationAxis, CP) * rotationAxis;
+        }
+
+        public bool IsLookingAtTarget(RaycastHit result, float tolDis = 5f)
+        {
+            var point = result.point;
+            var target2Point = point - TargetPosition;
+            return target2Point.magnitude <= tolDis;
+        }
+
+        public Vector3 FindTempTarget(RaycastHit result, float lookTargetTolDis = 5f, float barrierTolDis = 90f)
+        {
+            var humanPosition = _human.Cache.Transform.position;
+            var point = result.point;
+            var self2Point = point - humanPosition;
+            if (IsLookingAtTarget(result, lookTargetTolDis))
+            {
+                // Move to target;
+                return (TargetPosition + humanPosition) * 0.5f;
+            }
+            else if (self2Point.magnitude <= barrierTolDis)
+            {
+                // Adjust the body position.
+                var directionQuaternion = Quaternion.LookRotation(new Vector3(TargetDirection.x, 0.0f, TargetDirection.z));
+                var VectorRand = new Vector3[] { VectorLeft80, VectorRight80, VectorUp80 }[Random.Range(0, 3)];
+                var direction = (directionQuaternion * VectorRand).normalized;
+                var isHit = DetectDirection(direction, 0f, 5f, out result);
+                if (!isHit || (result.distance + 5f >= 40f))
+                {
+                    return humanPosition + 35f * direction;
+                }
+            }
+            // Move Closest;
+            return (point + humanPosition) * 0.5f;
         }
     }
 }
