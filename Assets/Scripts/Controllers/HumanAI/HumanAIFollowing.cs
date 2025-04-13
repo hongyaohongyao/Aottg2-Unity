@@ -183,7 +183,7 @@ namespace Controllers
                                 {
                                     if (Target is BaseCharacter character)
                                     {
-                                        targetPosition = HumanAIController.CorrectHookPosition(humanPosition, targetPosition, _controller.TargetVelocity, _controller.HookSpeed);
+                                        targetPosition = HumanAIController.CorrectShootPosition(humanPosition, targetPosition, _controller.TargetVelocity, _controller.HookSpeed);
                                     }
                                     _controller.LaunchHook(targetPosition);
                                 }

@@ -80,6 +80,7 @@ namespace Controllers
                 {
                     return;
                 }
+                var aimPos = _controller.TargetPosition;
                 var currentDistance = _controller.TargetDirection.magnitude;
                 if (_human.Weapon is BladeWeapon)
                 {
@@ -90,24 +91,36 @@ namespace Controllers
                 }
                 else if (_human.Weapon is ThunderspearWeapon thunderspearWeapon)
                 {
+                    var shootDistance = thunderspearWeapon.Speed * thunderspearWeapon.TravelTime;
                     if (SettingsManager.InGameCurrent.Misc.ThunderspearPVP.Value)
                     {
-                        if (currentDistance <= 20.0f)
+                        if (currentDistance <= shootDistance)
                         {
-                            _controller.Attack();
+                            if (thunderspearWeapon.GetCooldownLeft() <= 0f)
+                            {
+                                _controller.Attack();
+                            }
+                            else if (_human.IsHookedAny())
+                            {
+                                _controller.Reel(0);
+                                _controller.ReelOut();
+                            }
                         }
                     }
                     else
                     {
-                        if (currentDistance <= 30.0f)
+                        if (currentDistance <= shootDistance)
                         {
                             if (!thunderspearWeapon.HasActiveProjectile() || thunderspearWeapon.Current.IsEmbed)
                             {
                                 _controller.Attack();
                             }
                         }
-
                     }
+                    aimPos = HumanAIController.CorrectShootPosition(_human.transform.position,
+                                                                    _controller.TargetPosition,
+                                                                    _controller.TargetVelocity,
+                                                                    thunderspearWeapon.Speed);
                 }
                 else if (_human.Weapon is AmmoWeapon)
                 {
@@ -116,7 +129,7 @@ namespace Controllers
                         Attack();
                     }
                 }
-                _controller.SetAimPoint(_controller.TargetPosition);
+                _controller.SetAimPoint(aimPos);
             }
 
             public AutomationState LockingHuman(Human target)
@@ -162,7 +175,7 @@ namespace Controllers
                     if (_controller.IsLookingAtTarget(result, 1f))
                     {
                         var correctPosition = targetPosition;
-                        correctPosition = HumanAIController.CorrectHookPosition(humanPosition, correctPosition, _controller.TargetVelocity, _controller.HookSpeed);
+                        correctPosition = HumanAIController.CorrectShootPosition(humanPosition, correctPosition, _controller.TargetVelocity, _controller.HookSpeed);
                         if (_human.HookRight.HookReady())
                         {
                             _controller.LaunchHookRight(correctPosition);

@@ -864,15 +864,15 @@ namespace Controllers
             return a - Vector3.Project(a, b);
         }
 
-        public static Vector3 CorrectHookPosition(Vector3 start, Vector3 hookPosition, Vector3 targetVelocity, float hookSpeed)
+        public static Vector3 CorrectShootPosition(Vector3 start, Vector3 shootPosition, Vector3 targetVelocity, float shootSpeed)
         {
             if (targetVelocity.magnitude < 0.1f)
             {
-                return hookPosition;
+                return shootPosition;
             }
-            var hookingDistance = Vector3.Distance(hookPosition, start);
-            float t = hookingDistance / hookSpeed;
-            return hookPosition + t * targetVelocity;
+            var shootDistance = Vector3.Distance(shootPosition, start);
+            float t = shootDistance / shootSpeed;
+            return shootPosition + t * targetVelocity;
         }
 
         public static Vector3 CalcReelVelocity(Vector3 start, Vector3 hookPosition, Vector3 velocity, float reelAxis)
@@ -906,7 +906,7 @@ namespace Controllers
             return target2Point.magnitude <= tolDis;
         }
 
-        public Vector3 FindTempTarget(RaycastHit result, float lookTargetTolDis = 5f, float barrierTolDis = 90f)
+        public Vector3 FindTempTarget(RaycastHit result, float lookTargetTolDis = 5f, float barrierTolDis = 50f)
         {
             var humanPosition = _human.Cache.Transform.position;
             var point = result.point;
@@ -919,13 +919,15 @@ namespace Controllers
             else if (self2Point.magnitude <= barrierTolDis)
             {
                 // Adjust the body position.
-                var directionQuaternion = Quaternion.LookRotation(new Vector3(TargetDirection.x, 0.0f, TargetDirection.z));
-                var VectorRand = new Vector3[] { VectorLeft80, VectorRight80, VectorUp80 }[Random.Range(0, 3)];
-                var direction = (directionQuaternion * VectorRand).normalized;
-                var isHit = DetectDirection(direction, 0f, 5f, out result);
-                if (!isHit || (result.distance + 5f >= 40f))
+                var directionQuaternion = Quaternion.LookRotation(new Vector3(TargetDirection.x, Mathf.Max(0.0f, TargetDirection.y), TargetDirection.z));
+                foreach (var VectorRand in new Vector3[] { VectorLeft80, VectorRight80, VectorUp80 })
                 {
-                    return humanPosition + 35f * direction;
+                    var direction = (directionQuaternion * VectorRand).normalized;
+                    var isHit = DetectDirection(direction, 0f, 5f, out result);
+                    if (!isHit || (result.distance + 5f >= 40f))
+                    {
+                        return humanPosition + 35f * direction;
+                    }
                 }
             }
             // Move Closest;
