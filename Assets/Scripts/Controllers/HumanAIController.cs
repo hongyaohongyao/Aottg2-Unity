@@ -10,10 +10,6 @@ using Photon.Pun;
 using UnityEngine.EventSystems;
 using Map;
 using Random = UnityEngine.Random;
-using Discord;
-using UnityEditor.UI;
-using System;
-using NUnit.Framework;
 
 namespace Controllers
 {

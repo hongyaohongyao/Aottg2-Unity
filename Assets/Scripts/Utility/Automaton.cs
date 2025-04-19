@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
-using UnityEditorInternal;
 
 namespace Utility
 {
