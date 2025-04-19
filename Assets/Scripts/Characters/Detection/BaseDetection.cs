@@ -29,7 +29,7 @@ namespace Characters
         private HashSet<BaseCharacter> _tempRecalculateSlow = new HashSet<BaseCharacter>();
         private InGameManager _inGameManager;
 
-        public BaseDetection (BaseCharacter owner, bool enemiesOnly, bool titansOnly)
+        public BaseDetection(BaseCharacter owner, bool enemiesOnly, bool titansOnly)
         {
             Owner = owner;
             _enemiesOnly = enemiesOnly;
@@ -74,19 +74,21 @@ namespace Characters
 
         public void OnFixedUpdate()
         {
+            if (ClosestEnemy != null && ClosestEnemy.Dead)
+                ClosestEnemy = null;
             _currentMediumTime += Time.deltaTime;
             _currentSlowTime += Time.deltaTime;
             float mySpeed = GetSpeed();
             Vector3 myPosition = GetPosition();
             Recalculate(_recalculateFast, myPosition, mySpeed);
             _recalculateFast.Clear();
-            if (_currentMediumTime > MediumDelay)
+            if (_currentMediumTime > MediumDelay || ClosestEnemy == null)
             {
                 _currentMediumTime = 0f;
                 Recalculate(_recalculateMedium, myPosition, mySpeed);
                 _recalculateMedium.Clear();
             }
-            if (_currentSlowTime > SlowDelay)
+            if (_currentSlowTime > SlowDelay || ClosestEnemy == null)
             {
                 _currentSlowTime = 0f;
                 Recalculate(_recalculateSlow, myPosition, mySpeed);
