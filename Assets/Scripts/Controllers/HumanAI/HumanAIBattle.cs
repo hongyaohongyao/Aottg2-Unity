@@ -1,8 +1,5 @@
 
-using UnityEngine;
-using Characters;
 using Utility;
-using Unity.Mathematics;
 
 namespace Controllers
 {
@@ -29,6 +26,7 @@ namespace Controllers
                 }
                 // Debug.Log("FindTarget");
                 return Automation.GetState(HumanAIStates.Locking);
+                // return Automation.GetState(HumanAIStates.Following);
             }
 
         }

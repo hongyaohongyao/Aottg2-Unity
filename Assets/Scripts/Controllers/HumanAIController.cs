@@ -3,15 +3,11 @@ using Unity.Mathematics;
 using ApplicationManagers;
 using Settings;
 using Characters;
-using UI;
 using System.Collections.Generic;
 using Utility;
 using Photon.Pun;
-using UnityEngine.EventSystems;
 using Map;
 using Random = UnityEngine.Random;
-using System;
-using UnityEditor.Experimental.GraphView;
 
 namespace Controllers
 {
@@ -378,6 +374,7 @@ namespace Controllers
                 if (Target is BaseTitan titan)
                 {
                     TargetPosition = titan.BaseTitanCache.NapeHurtbox.transform.position;
+                    titan.TitanColliderToggler.RegisterLook();
                 }
                 else
                 {
@@ -560,13 +557,13 @@ namespace Controllers
             DoHookRight = false;
         }
 
-        public bool IsHookedTarget(HookUseable hook, bool needNape = false, float distannse2TargetTol = 5.0f)
+        public bool IsHookedTarget(HookUseable hook, bool needNape = false, bool fuzzy = false, float distannse2TargetTol = 5.0f)
         {
             if (hook.IsHooked() && Target != null)
             {
-                if (Target is MapTargetable target)
+                if (Target is MapTargetable || fuzzy)
                 {
-                    return Vector3.Distance(target.GetPosition(), hook.GetHookPosition()) < distannse2TargetTol;
+                    return Vector3.Distance(Target.GetPosition(), hook.GetHookPosition()) < distannse2TargetTol;
                 }
                 else if (Target is BaseCharacter character)
                 {
