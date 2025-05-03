@@ -172,7 +172,7 @@ namespace Controllers
                 var end = humanPosition + targetDirection.normalized * 120f;
                 if (Physics.Linecast(start, end, out RaycastHit result, HumanAIController.BarrierMask))
                 {
-                    if (_controller.IsLookingAtTarget(result, 1f))
+                    if (_controller.IsDirectlySeeingTarget(result, 1f))
                     {
                         var correctPosition = targetPosition;
                         correctPosition = HumanAIController.CorrectShootPosition(humanPosition, correctPosition, _controller.TargetVelocity, _controller.HookSpeed);
@@ -184,7 +184,7 @@ namespace Controllers
                     }
                     else
                     {
-                        _controller.StraightFlight(_controller.FindTempTarget(result, 1f, 25f), 60f);
+                        _controller.StraightFlight(_controller.FindTempTarget(result, 1f, 25f) ?? targetPosition, 60f);
                     }
                     AttackEnemy();
                 }
@@ -194,15 +194,106 @@ namespace Controllers
                 }
                 return this;
             }
+            public float GetNapeAngle(BaseTitan titan)
+            {
+                var nape = titan.BaseTitanCache.NapeHurtbox.transform;
+                var a = nape.position - _human.transform.position;
+                a.y = 0f;
+                var b = new Vector3(nape.forward.x, 0f, nape.forward.z);
+                return Vector3.SignedAngle(a, b, Vector3.up);
+            }
 
             public AutomationState LockingTitan(BaseTitan target)
             {
                 var humanPosition = _human.transform.position;
                 var targetPosition = _controller.TargetPosition;
                 var targetDirection = _controller.TargetDirection;
-                var nape = target.BaseTitanCache.NapeHurtbox;
-                var mouth = target.BaseTitanCache.MouthHitbox;
+                var start = humanPosition + targetDirection.normalized;
+                var end = humanPosition + targetDirection.normalized * 120f;
+                var hookPosition = _controller.GetHookPosition();
+                if (Physics.Linecast(start, end, out RaycastHit result, HumanAIController.BarrierMask))
+                {
+                    if (Mathf.Abs(GetNapeAngle(target)) < 60f)
+                    {
+                        var hookedTargetL = _controller.IsHookedTarget(_human.HookLeft, true);
+                        var hookedTargetR = _controller.IsHookedTarget(_human.HookRight, true);
+                        if (hookedTargetL || hookedTargetR)
+                        {
+                            if (!hookedTargetL)
+                            {
+                                _controller.ReleaseHookLeft();
+                            }
+                            if (!hookedTargetR)
+                            {
+                                _controller.ReleaseHookRight();
+                            }
 
+                            float predOpp = Mathf.Infinity;
+
+                            var reelInCond = _human.Pivot;
+                            if (reelInCond)
+                            {
+                                var newV = HumanAIController.CalcReelVelocity(
+                                    humanPosition,
+                                    hookPosition,
+                                    _human.Cache.Rigidbody.velocity,
+                                    -1f
+                                );
+                                predOpp = HumanAIController.PredictAttackOpportunity(
+                                    humanPosition,
+                                    targetPosition,
+                                    newV,
+                                    _controller.GetHookPosition(),
+                                    5f, 0.5f, 5f
+                                );
+                                if (Mathf.Abs(predOpp - 0.15f) < 1f)
+                                    _controller.ReelIn();
+                            }
+                            else
+                            {
+                                HumanAIController.PredictAttackOpportunity(
+                                    humanPosition,
+                                    targetPosition,
+                                    _human.Cache.Rigidbody.velocity,
+                                    _controller.GetHookPosition(),
+                                    5f, 0.5f, 5f
+                                );
+                            }
+
+
+                            if (_human.Cache.Rigidbody.velocity.magnitude < 0.5f)
+                            {
+                                _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 30f);
+                            }
+
+                            if (Mathf.Abs(predOpp - 0.15f) < 1f)
+                            {
+                                AttackEnemy();
+                            }
+                            if (_isAttacked)
+                            {
+                                _controller.ReelOut();
+                            }
+                            return this;
+                        }
+                        var correctPosition = target.BaseTitanCache.MouthHitbox.transform.position;
+                        correctPosition = HumanAIController.CorrectShootPosition(humanPosition, correctPosition, _controller.TargetVelocity, _controller.HookSpeed);
+                        if (_human.HookRight.HookReady())
+                        {
+                            _controller.LaunchHookRight(correctPosition);
+                        }
+                        _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 90f);
+                    }
+                    else
+                    {
+                        _controller.StraightFlight(_controller.FindTempTarget(result, 1f, 50f) ?? targetPosition, 90f);
+                    }
+                    AttackEnemy();
+                }
+                else
+                {
+                    _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 90f);
+                }
                 return this;
             }
         }

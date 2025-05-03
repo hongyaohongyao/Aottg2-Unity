@@ -24,8 +24,8 @@ namespace Controllers
             {
                 if (!_controller.IsTargetValid())
                 {
-                    // Debug.Log("FindingTarget");
-                    return Automation.GetState(HumanAIStates.FindTarget);
+                    _controller.ReleaseHookAll();
+                    _controller.Target = _controller.FindNearestEnemy();
                 }
                 // Debug.Log("FindTarget");
                 return Automation.GetState(HumanAIStates.Locking);

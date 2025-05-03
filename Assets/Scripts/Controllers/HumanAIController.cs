@@ -10,6 +10,8 @@ using Photon.Pun;
 using UnityEngine.EventSystems;
 using Map;
 using Random = UnityEngine.Random;
+using System;
+using UnityEditor.Experimental.GraphView;
 
 namespace Controllers
 {
@@ -85,10 +87,30 @@ namespace Controllers
 
         public float HookSpeed = 150f;
 
-        public static readonly Vector3 VectorLeft80 = new(Mathf.Sin(-80f * Mathf.Deg2Rad), 0f, Mathf.Cos(-80f * Mathf.Deg2Rad));
+        public static readonly Vector3[] DetectedDirections = new Vector3[49];
+
         public static readonly Vector3 VectorRight80 = new(Mathf.Sin(80f * Mathf.Deg2Rad), 0f, Mathf.Cos(80f * Mathf.Deg2Rad));
         public static readonly Vector3 VectorUp80 = new(0f, Mathf.Sin(80f * Mathf.Deg2Rad), Mathf.Cos(80f * Mathf.Deg2Rad));
 
+        static HumanAIController()
+        {
+            for (int i = -3; i <= 3; i++)
+            {
+                for (int j = -3; j <= 3; j++)
+                {
+                    int x = i + 3;
+                    int y = j + 3;
+                    int idx = y * 7 + x;
+                    float xa = i * 30f * Mathf.Deg2Rad;
+                    float ya = j * 30f * Mathf.Deg2Rad;
+                    DetectedDirections[idx] = new Vector3(
+                        Mathf.Sin(xa) * Mathf.Cos(ya),
+                        Mathf.Sin(ya),
+                        Mathf.Cos(xa) * Mathf.Cos(ya)
+                    );
+                }
+            }
+        }
 
         protected override void Awake()
         {
@@ -538,19 +560,19 @@ namespace Controllers
             DoHookRight = false;
         }
 
-        public bool IsHookedTarget(HookUseable hook, bool needNape = false)
+        public bool IsHookedTarget(HookUseable hook, bool needNape = false, float distannse2TargetTol = 5.0f)
         {
             if (hook.IsHooked() && Target != null)
             {
                 if (Target is MapTargetable target)
                 {
-                    return Vector3.Distance(target.GetPosition(), hook.GetHookPosition()) < 10.0f;
+                    return Vector3.Distance(target.GetPosition(), hook.GetHookPosition()) < distannse2TargetTol;
                 }
                 else if (Target is BaseCharacter character)
                 {
                     if (needNape && Target is BaseTitan titan)
                     {
-                        return Vector3.Distance(titan.BaseTitanCache.NapeHurtbox.transform.position, hook.GetHookPosition()) < 6.0f;
+                        return Vector3.Distance(titan.BaseTitanCache.NapeHurtbox.transform.position, hook.GetHookPosition()) < distannse2TargetTol;
                     }
                     else
                     {
@@ -619,8 +641,9 @@ namespace Controllers
 
             if (Target is BaseCharacter target)
             {
-                if (target.CurrentHealth <= 0)
+                if (target.Dead)
                 {
+                    Target = null;
                     return false;
                 }
             }
@@ -634,6 +657,11 @@ namespace Controllers
             direction.y = 0;
             Move(direction.normalized);
             Jump();
+        }
+
+        public static Vector3 GetDetectedDirection(int xa, int ya)
+        {
+            return DetectedDirections[(ya + 3) * 7 + xa + 3];
         }
 
         public void RandomJump(bool actionInAir, float forward)
@@ -740,8 +768,7 @@ namespace Controllers
                         if (_human.Pivot && !hitBarrier)
                         {
                             var reelInVelocity = CalcReelVelocity(_human.transform.position, hookPosition, velocity, -1f);
-                            // var isHit = Physics.Linecast(humanPosition, humanPosition + reelInVelocity.normalized * direction.magnitude, BarrierMask);
-                            // if (!isHit && Vector3.Angle(direction, reelInVelocity) < tolAngle)
+
                             if (Vector3.Angle(direction, reelInVelocity) < tolAngle)
                             {
                                 ReelIn();
@@ -764,10 +791,11 @@ namespace Controllers
                     Dodge(direction.normalized);
                 }
                 var directionQuaternion = Quaternion.LookRotation(direction.normalized);
-                var randomAngle = Random.Range(16.0f, 45.0f) * RandomGen.GetRandomSign() * Mathf.Deg2Rad;
+                var randomAngle = Random.Range(45.0f, 80.0f) * RandomGen.GetRandomSign() * Mathf.Deg2Rad;
                 var randomDirection = new Vector3(Mathf.Sin(randomAngle), 0f, Mathf.Cos(randomAngle));
                 randomDirection = directionQuaternion * randomDirection;
                 var hookPosition = humanPosition + randomDirection * 115f;
+                Debug.DrawLine(humanPosition, hookPosition, Color.blue);
                 if (Physics.Linecast(humanPosition + randomDirection.normalized * 5f, hookPosition, BarrierMask))
                 {
                     LaunchHook(hookPosition);
@@ -895,34 +923,49 @@ namespace Controllers
             return hookPosition + Mathf.Cos(circle) * CP + Mathf.Sin(circle) * Vector3.Cross(rotationAxis, CP) + (1 - Mathf.Cos(circle)) * Vector3.Dot(rotationAxis, CP) * rotationAxis;
         }
 
-        public bool IsLookingAtTarget(RaycastHit result, float tolDis = 5f)
+        public bool IsDirectlySeeingTarget(RaycastHit result, float tolDis = 5f)
         {
             var point = result.point;
             var target2Point = point - TargetPosition;
+            Debug.DrawLine(transform.position, point, Color.red);
             return target2Point.magnitude <= tolDis;
         }
 
-        public Vector3 FindTempTarget(RaycastHit result, float lookTargetTolDis = 5f, float barrierTolDis = 50f)
+        public Vector3? FindTempTarget(RaycastHit result, float lookTargetTolDis = 5f, float barrierTolDis = 50f)
         {
             var humanPosition = _human.Cache.Transform.position;
             var point = result.point;
             var self2Point = point - humanPosition;
-            if (IsLookingAtTarget(result, lookTargetTolDis))
+            if (IsDirectlySeeingTarget(result, lookTargetTolDis))
             {
                 // Move to target;
-                return (TargetPosition + humanPosition) * 0.5f;
+                return null;
             }
             else if (self2Point.magnitude <= barrierTolDis)
             {
-                // Adjust the body position.
-                var directionQuaternion = Quaternion.LookRotation(new Vector3(TargetDirection.x, Mathf.Max(0.0f, TargetDirection.y), TargetDirection.z));
-                foreach (var VectorRand in new Vector3[] { VectorLeft80, VectorRight80, VectorUp80 })
+                int[] directionOrderV;
+                int[] directionOrderH = new int[] { 0, -1, 1, -2, 2, -3, 3 };
+                if (TargetDirection.y > 0)
                 {
-                    var direction = (directionQuaternion * VectorRand).normalized;
-                    var isHit = DetectDirection(direction, 0f, 5f, out result);
-                    if (!isHit || (result.distance + 5f >= 40f))
+                    directionOrderV = new int[] { 1, 2, 3, 0, -1, -2, -3 };
+                }
+                else
+                {
+                    directionOrderV = new int[] { 0, 1, -1, 2, -2, 3, -3 };
+                }
+                // Adjust the body position.
+                var directionQuaternion = Quaternion.LookRotation(new Vector3(TargetDirection.x, 0.0f, TargetDirection.z));
+                foreach (var dirV in directionOrderV)
+                {
+                    foreach (var dirH in directionOrderH)
                     {
-                        return humanPosition + 35f * direction;
+                        var vRand = GetDetectedDirection(dirH, dirV);
+                        var direction = (directionQuaternion * vRand).normalized;
+                        var isHit = DetectDirection(direction, 0f, 5f, out result);
+                        if (!isHit || (result.distance + 5f >= 40f))
+                        {
+                            return humanPosition + 35f * direction;
+                        }
                     }
                 }
             }

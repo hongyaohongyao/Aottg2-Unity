@@ -34,38 +34,33 @@ namespace Controllers
                 {
                     return Automation.DefaultState;
                 }
-                if (NeedFindTempTarget())
+
+                FindTempTarget();
+                if (tempTargetPosition is Vector3 p)
                 {
-                    FindTempTarget();
-                    if (tempTargetPosition != null)
-                    {
-                        // Maintain flying altitude
-                        var p = (Vector3)tempTargetPosition;
-                        p.y += Mathf.Max(20f, _controller.TargetDirection.y);
-                    }
-                }
-                if (tempTargetPosition != null)
-                {
-                    _controller.StraightFlight((Vector3)tempTargetPosition, 30f);
+                    // Maintain flying altitude
+                    p.y += Mathf.Max(20f, _controller.TargetDirection.y);
+                    Debug.DrawLine(_human.transform.position, p, Color.cyan);
+                    _controller.StraightFlight(p, 30f);
                 }
                 return this;
             }
-            public bool NeedFindTempTarget()
-            {
-                if (tempTargetPosition == null || tempTargetTimer <= 0 || Vector3.Distance(_human.Cache.Transform.position, (Vector3)tempTargetPosition) < 10.0)
-                {
-                    return true;
-                }
-                var humanPosition = _human.Cache.Transform.position;
-                var targetPosition = _controller.TargetPosition;
-                var tempDirectionH = (Vector3)tempTargetPosition - humanPosition;
-                tempDirectionH.y = 0;
-                if (Vector3.Angle(tempDirectionH, new Vector3(targetPosition.x, 0f, targetPosition.z)) > 100)
-                {
-                    return true;
-                }
-                return false;
-            }
+            // public bool NeedFindTempTarget()
+            // {
+            //     if (tempTargetPosition == null || tempTargetTimer <= 0 || Vector3.Distance(_human.Cache.Transform.position, (Vector3)tempTargetPosition) < 10.0)
+            //     {
+            //         return true;
+            //     }
+            //     var humanPosition = _human.Cache.Transform.position;
+            //     var targetPosition = _controller.TargetPosition;
+            //     var tempDirectionH = (Vector3)tempTargetPosition - humanPosition;
+            //     tempDirectionH.y = 0;
+            //     if (Vector3.Angle(tempDirectionH, new Vector3(targetPosition.x, 0f, targetPosition.z)) > 100)
+            //     {
+            //         return true;
+            //     }
+            //     return false;
+            // }
 
             public void FindTempTarget()
             {
@@ -75,7 +70,7 @@ namespace Controllers
                 var end = humanPosition + targetDirection + targetDirection.normalized * 10f;
                 if (Physics.Linecast(start, end, out RaycastHit result, HumanAIController.BarrierMask))
                 {
-                    tempTargetPosition = _controller.FindTempTarget(result, 5f);
+                    tempTargetPosition = _controller.FindTempTarget(result, 5f, targetDirection.magnitude * 0.5f) ?? (humanPosition + targetDirection * 0.5f);
                 }
                 else
                 {
