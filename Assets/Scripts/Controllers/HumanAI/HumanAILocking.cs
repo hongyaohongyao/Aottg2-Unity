@@ -13,6 +13,9 @@ namespace Controllers
         class HumanAILocking : HumanAIAutomatonState
         {
             protected bool _isAttacked;
+            protected float targetRadius;
+
+            protected float attackDistance;
             public HumanAILocking(Automaton automaton, HumanAIController controller) : base(automaton, controller)
             {
             }
@@ -20,6 +23,14 @@ namespace Controllers
             public override void StateStart()
             {
                 _isAttacked = false;
+                if (_human.Weapon is BladeWeapon)
+                {
+                    attackDistance = 5f;
+                }
+                else if (_human.Weapon is AmmoWeapon)
+                {
+                    attackDistance = 20f;
+                }
             }
 
             public override AutomationState StateAction()
@@ -61,9 +72,9 @@ namespace Controllers
                 return Automation.DefaultState;
             }
 
-            public void Attack()
+            public void Attack(bool isHold = false)
             {
-                if (!_isAttacked)
+                if (!_isAttacked || isHold)
                 {
                     _isAttacked = true;
                     _controller.Attack();
@@ -74,66 +85,94 @@ namespace Controllers
                 }
             }
 
-            public void AttackEnemy(bool isLookingTarget = true)
+            public void AttackEnemy(bool isLookingTarget = true, bool tryHold = false, bool delayAttack = false)
             {
-                if (!isLookingTarget)
+                if (_human.Weapon is HoldUseable && tryHold && !_isAttacked)
                 {
-                    return;
+                    Attack(true);
                 }
+
                 var aimPos = _controller.TargetPosition;
                 var currentDistance = _controller.TargetDirection.magnitude;
-                if (_human.Weapon is BladeWeapon)
+                var keepHold = false;
+                if (isLookingTarget)
                 {
-                    if (currentDistance <= 5.0f)
+                    if (_human.Weapon is BladeWeapon)
                     {
-                        Attack();
-                    }
-                }
-                else if (_human.Weapon is ThunderspearWeapon thunderspearWeapon)
-                {
-                    var shootDistance = thunderspearWeapon.Speed * thunderspearWeapon.TravelTime;
-                    if (SettingsManager.InGameCurrent.Misc.ThunderspearPVP.Value)
-                    {
-                        if (currentDistance <= shootDistance)
+                        if (delayAttack && _human.Cache.Rigidbody.velocity.magnitude > 0.1f)
                         {
-                            if (thunderspearWeapon.GetCooldownLeft() <= 0f)
+                            var proj = Vector3.Project(_controller.TargetDirection, _human.Cache.Rigidbody.velocity);
+                            var t = proj.magnitude / _human.Cache.Rigidbody.velocity.magnitude;
+                            if (t < 0.3f)
                             {
-                                _controller.Attack();
-                            }
-                            else if (_human.IsHookedAny())
-                            {
-                                _controller.Reel(0);
-                                _controller.ReelOut();
+                                currentDistance = (_controller.TargetDirection - proj).magnitude;
                             }
                         }
-                    }
-                    else
-                    {
-                        if (currentDistance <= shootDistance)
+                        if (currentDistance <= attackDistance + targetRadius)
                         {
-                            if (!thunderspearWeapon.HasActiveProjectile() || thunderspearWeapon.Current.IsEmbed)
-                            {
-                                _controller.Attack();
-                            }
+                            Attack();
+                        }
+                        else if (tryHold)
+                        {
+                            keepHold = true;
                         }
                     }
-                    aimPos = HumanAIController.CorrectShootPosition(_human.transform.position,
-                                                                    _controller.TargetPosition,
-                                                                    _controller.TargetVelocity,
-                                                                    thunderspearWeapon.Speed);
-                }
-                else if (_human.Weapon is AmmoWeapon)
-                {
-                    if (currentDistance <= 20.0f)
+                    else if (_human.Weapon is ThunderspearWeapon thunderspearWeapon)
                     {
-                        Attack();
+                        var shootDistance = thunderspearWeapon.Speed * thunderspearWeapon.TravelTime;
+                        if (SettingsManager.InGameCurrent.Misc.ThunderspearPVP.Value)
+                        {
+                            if (currentDistance <= shootDistance)
+                            {
+                                if (thunderspearWeapon.GetCooldownLeft() <= 0f)
+                                {
+                                    _controller.Attack();
+                                }
+                                else if (_human.IsHookedAny())
+                                {
+                                    _controller.Reel(0);
+                                    _controller.ReelOut();
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (currentDistance <= shootDistance)
+                            {
+                                if (!thunderspearWeapon.HasActiveProjectile() || thunderspearWeapon.Current.IsEmbed)
+                                {
+                                    _controller.Attack();
+                                }
+                            }
+                        }
+                        aimPos = HumanAIController.CorrectShootPosition(_human.transform.position,
+                                                                        _controller.TargetPosition,
+                                                                        _controller.TargetVelocity,
+                                                                        thunderspearWeapon.Speed);
                     }
+                    else if (_human.Weapon is AmmoWeapon)
+                    {
+                        if (currentDistance <= attackDistance + targetRadius)
+                        {
+                            Attack();
+                        }
+                    }
+                }
+                else
+                {
+                    keepHold = true;
+                }
+
+                if (_human.Weapon is HoldUseable && keepHold)
+                {
+                    Attack(true);
                 }
                 _controller.SetAimPoint(aimPos);
             }
 
             public AutomationState LockingHuman(Human target)
             {
+                targetRadius = 0.5f;
                 var humanPosition = _human.transform.position;
                 var targetPosition = _controller.TargetPosition;
                 var targetDirection = _controller.TargetDirection;
@@ -203,97 +242,103 @@ namespace Controllers
                 return Vector3.SignedAngle(a, b, Vector3.up);
             }
 
+            float SignedDistanceToDirection(Vector3 A, Vector3 B, Vector3 forward)
+            {
+                Vector3 bDir = B.normalized;
+                Vector3 projection = Vector3.Dot(A, bDir) * bDir;
+                Vector3 rejection = A - projection; // A 到 B 的垂直部分
+                float distance = rejection.magnitude;
+
+                // 符号由 forward 和 rejection 方向决定
+                float sign = Mathf.Sign(Vector3.Dot(rejection.normalized, forward));
+                return sign * distance;
+            }
+
             public AutomationState LockingTitan(BaseTitan target)
             {
-                var humanPosition = _human.transform.position;
-                var targetPosition = _controller.TargetPosition;
-                var targetDirection = _controller.TargetDirection;
-                var start = humanPosition + targetDirection.normalized;
-                var end = humanPosition + targetDirection.normalized * 120f;
-                var hookPosition = _controller.GetHookPosition();
-                if (Physics.Linecast(start, end, out RaycastHit result, HumanAIController.BarrierMask))
+                if (_human.Weapon is BladeWeapon)
                 {
-                    if (Mathf.Abs(GetNapeAngle(target)) < 60f)
+                    if (!_human.Grounded)
                     {
-                        var hookedTargetL = _controller.IsHookedTarget(_human.HookLeft, true);
-                        var hookedTargetR = _controller.IsHookedTarget(_human.HookRight, true);
-                        if (hookedTargetL || hookedTargetR)
-                        {
-                            if (!hookedTargetL)
-                            {
-                                _controller.ReleaseHookLeft();
-                            }
-                            if (!hookedTargetR)
-                            {
-                                _controller.ReleaseHookRight();
-                            }
-
-                            float predOpp = Mathf.Infinity;
-
-                            var reelInCond = _human.Pivot;
-                            if (reelInCond)
-                            {
-                                var newV = HumanAIController.CalcReelVelocity(
-                                    humanPosition,
-                                    hookPosition,
-                                    _human.Cache.Rigidbody.velocity,
-                                    -1f
-                                );
-                                predOpp = HumanAIController.PredictAttackOpportunity(
-                                    humanPosition,
-                                    targetPosition,
-                                    newV,
-                                    _controller.GetHookPosition(),
-                                    5f, 0.5f, 5f
-                                );
-                                if (Mathf.Abs(predOpp - 0.15f) < 1f)
-                                    _controller.ReelIn();
-                            }
-                            else
-                            {
-                                HumanAIController.PredictAttackOpportunity(
-                                    humanPosition,
-                                    targetPosition,
-                                    _human.Cache.Rigidbody.velocity,
-                                    _controller.GetHookPosition(),
-                                    5f, 0.5f, 5f
-                                );
-                            }
-
-
-                            if (_human.Cache.Rigidbody.velocity.magnitude < 0.5f)
-                            {
-                                _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 30f);
-                            }
-
-                            if (Mathf.Abs(predOpp - 0.15f) < 1f)
-                            {
-                                AttackEnemy();
-                            }
-                            if (_isAttacked)
-                            {
-                                _controller.ReelOut();
-                            }
-                            return this;
-                        }
-                        var correctPosition = target.BaseTitanCache.MouthHitbox.transform.position;
-                        correctPosition = HumanAIController.CorrectShootPosition(humanPosition, correctPosition, _controller.TargetVelocity, _controller.HookSpeed);
-                        if (_human.HookRight.HookReady())
-                        {
-                            _controller.LaunchHookRight(correctPosition);
-                        }
-                        _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 90f);
+                        attackDistance = 3f;
                     }
                     else
                     {
-                        _controller.StraightFlight(_controller.FindTempTarget(result, 1f, 50f) ?? targetPosition, 90f);
+                        attackDistance = 5f;
                     }
-                    AttackEnemy();
+
+                }
+                // var napeBox = (CapsuleCollider)target.BaseTitanCache.NapeHurtbox;
+                // var globalScale = napeBox.transform.lossyScale;
+                // var napeRadius = napeBox.radius * Mathf.Max(globalScale.x, globalScale.y);
+                targetRadius = 2f;
+                var humanPosition = _human.transform.position;
+                var targetPosition = _controller.TargetPosition;
+                var targetDirection = _controller.TargetDirection;
+                // var start = humanPosition + targetDirection.normalized;
+                // var end = humanPosition + targetDirection.normalized * 120f;
+                var hookPosition = _controller.GetHookPosition();
+                var hookedTargetL = _controller.IsHookedTarget(_human.HookLeft, true);
+                var hookedTargetR = _controller.IsHookedTarget(_human.HookRight, true);
+                var moveBox = (CapsuleCollider)target.BaseTitanCache.Movebox;
+                var rawRadius = moveBox.radius * moveBox.transform.lossyScale.x * 2f;
+                var safeRadius = rawRadius * 1.2f;
+                var radius = rawRadius * 1.4f;
+                var velocity = _human.Cache.Rigidbody.velocity;
+
+
+                var isDirectlySeeingTarget = !Physics.Linecast(humanPosition + targetDirection.normalized, targetPosition, out RaycastHit result, HumanAIController.BarrierMask) || _controller.IsDirectlySeeingTarget(result, 0.1f);
+                var flyAround = true;
+
+                Debug.DrawLine(humanPosition, targetPosition, Color.red);
+
+                if (isDirectlySeeingTarget && velocity.magnitude > 0.1f)
+                {
+
+                    // var cross = Vector3.Cross(_controller.TargetDirection, velocity);
+                    var distance = SignedDistanceToDirection(_controller.TargetDirection, velocity, target.BaseTitanCache.NapeHurtbox.transform.forward);
+                    var isDirectlyFlightTo = distance > 0 && distance < attackDistance + targetRadius && !Physics.Linecast(humanPosition + velocity.normalized, humanPosition + Mathf.Abs(distance) * velocity.normalized, out result, HumanAIController.BarrierMask) || _controller.IsDirectlySeeingTarget(result, 0.1f);
+                    if (isDirectlyFlightTo)
+                    {
+                        flyAround = false;
+                    }
+                    else
+                    {
+                        var reelVelocity = HumanAIController.CalcReelVelocity(humanPosition, hookPosition, velocity, -1f);
+                        distance = SignedDistanceToDirection(_controller.TargetDirection, reelVelocity, target.BaseTitanCache.NapeHurtbox.transform.forward);
+                        var isReelFlightTo = distance > 0 && distance < attackDistance + targetRadius && !Physics.Linecast(humanPosition + reelVelocity.normalized, humanPosition + distance * reelVelocity.normalized, out result, HumanAIController.BarrierMask) || _controller.IsDirectlySeeingTarget(result, 0.1f);
+                        if (isReelFlightTo)
+                        {
+                            Debug.Log("Attack Reel");
+                            _controller.ReelIn();
+                            flyAround = false;
+                        }
+                    }
+                }
+
+                if (flyAround)
+                {
+                    Debug.Log("scale: " + target.BaseTitanCache.Head.lossyScale.z + " " + safeRadius);
+                    var mouthPos = target.BaseTitanCache.MouthHitbox.transform.position;
+                    var napePos = target.BaseTitanCache.NapeHurtbox.transform.position;
+                    // _controller.FlightAround(target.BaseTitanCache.NapeHurtbox.transform.position, radius, safeRadius, hookTolH: target.BaseTitanCache.Head.lossyScale.z / 2f);
+                    _controller.FlightAround(new Vector3(mouthPos.x, (napePos.y + mouthPos.y) * 0.5f, mouthPos.z), radius, safeRadius, hookTolH: target.BaseTitanCache.Head.lossyScale.z / 2f);
                 }
                 else
                 {
-                    _controller.StraightFlight(targetPosition + new Vector3(0f, 5f, 0f), 90f);
+                    _controller.Jump();
                 }
+
+                if (_human.IsHookedAny())
+                {
+                    AttackEnemy(isDirectlySeeingTarget, tryHold: true, delayAttack: true);
+                }
+                else
+                {
+                    _isAttacked = false;
+                }
+                // var isAttacking = _isAttacked || _human.State == HumanState.Attack || _human.State == HumanState.SpecialAttack;
+
                 return this;
             }
         }

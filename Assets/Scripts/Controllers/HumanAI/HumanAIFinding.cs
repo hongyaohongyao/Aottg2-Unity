@@ -40,7 +40,6 @@ namespace Controllers
                 {
                     // Maintain flying altitude
                     p.y += Mathf.Max(20f, _controller.TargetDirection.y);
-                    Debug.DrawLine(_human.transform.position, p, Color.cyan);
                     _controller.StraightFlight(p, 30f);
                 }
                 return this;

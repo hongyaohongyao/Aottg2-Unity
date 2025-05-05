@@ -8,6 +8,7 @@ using Utility;
 using Photon.Pun;
 using Map;
 using Random = UnityEngine.Random;
+using System;
 
 namespace Controllers
 {
@@ -310,12 +311,15 @@ namespace Controllers
         {
             if (ReelAxis < 0)
             {
-                if (!_human._reelInWaitForRelease)
-                    _human.ReelInAxis = -1f;
+                _human.ReelInAxis = -1f;
             }
             if (ReelAxis > 0)
             {
                 _human.ReelOutAxis = 1f;
+            }
+            else
+            {
+                _human.ReelOutAxis = 0f;
             }
         }
 
@@ -373,7 +377,10 @@ namespace Controllers
             {
                 if (Target is BaseTitan titan)
                 {
-                    TargetPosition = titan.BaseTitanCache.NapeHurtbox.transform.position;
+                    var napeBox = (CapsuleCollider)titan.BaseTitanCache.NapeHurtbox;
+                    var globalScale = napeBox.transform.lossyScale;
+                    var radius = napeBox.radius * Mathf.Max(globalScale.x, globalScale.y);
+                    TargetPosition = napeBox.transform.position - 1.5f * radius * napeBox.transform.forward + 0.5f * radius * napeBox.transform.up;
                     titan.TitanColliderToggler.RegisterLook();
                 }
                 else
@@ -385,6 +392,14 @@ namespace Controllers
             else
             {
                 ReleaseHookAll();
+            }
+            if (!_human.HookLeft.HasHook())
+            {
+                DoHookLeft = false;
+            }
+            if (!_human.HookRight.HasHook())
+            {
+                DoHookRight = false;
             }
         }
 
@@ -487,6 +502,7 @@ namespace Controllers
         public void Reel(int reelAxis)
         {
             ReelAxis = reelAxis;
+            UpdateReelInput();
         }
 
         public void ReelIn()
@@ -528,12 +544,12 @@ namespace Controllers
 
         public bool LaunchHook(Vector3 position)
         {
-            if (_hookLeftTimer <= 0 && _human.HookLeft.HookReady())
+            if (_hookLeftTimer <= 0f && _human.HookLeft.HookReady())
             {
                 _hookLeftTimer = 0.8f;
                 return LaunchHookLeft(position);
             }
-            else if (_hookRightTimer <= 0 && _human.HookRight.HookReady())
+            else if (_hookRightTimer <= 0f && _human.HookRight.HookReady())
             {
                 _hookRightTimer = 0.8f;
                 return LaunchHookRight(position);
@@ -624,8 +640,10 @@ namespace Controllers
         {
             DefaultAction();
             FixedUpdateTargetStatus();
-            _hookLeftTimer -= Time.deltaTime;
-            _hookRightTimer -= Time.deltaTime;
+            if (_hookLeftTimer > 0f)
+                _hookLeftTimer -= Time.deltaTime;
+            if (_hookRightTimer > 0f)
+                _hookRightTimer -= Time.deltaTime;
             Automaton.Action();
         }
 
@@ -760,14 +778,18 @@ namespace Controllers
                 {
                     var hookPosition = GetHookPosition();
                     var distance2hook = Vector3.Distance(hookPosition, humanPosition);
+                    // Debug.Log("isHook");
                     if (distance2hook > 5f)
                     {
+                        // Debug.Log("distance2hook");
                         if (_human.Pivot && !hitBarrier)
                         {
+                            // Debug.Log("hitBarrier");
                             var reelInVelocity = CalcReelVelocity(_human.transform.position, hookPosition, velocity, -1f);
 
                             if (Vector3.Angle(direction, reelInVelocity) < tolAngle)
                             {
+                                // Debug.Log("reelin");
                                 ReelIn();
                                 return;
                             }
@@ -789,13 +811,88 @@ namespace Controllers
                 }
                 var directionQuaternion = Quaternion.LookRotation(direction.normalized);
                 var randomAngle = Random.Range(45.0f, 80.0f) * RandomGen.GetRandomSign() * Mathf.Deg2Rad;
-                var randomDirection = new Vector3(Mathf.Sin(randomAngle), 0f, Mathf.Cos(randomAngle));
-                randomDirection = directionQuaternion * randomDirection;
+                var rawRandomDirection = new Vector3(Mathf.Sin(randomAngle), 0f, Mathf.Cos(randomAngle));
+                var randomDirection = directionQuaternion * rawRandomDirection;
                 var hookPosition = humanPosition + randomDirection * 115f;
-                Debug.DrawLine(humanPosition, hookPosition, Color.blue);
-                if (Physics.Linecast(humanPosition + randomDirection.normalized * 5f, hookPosition, BarrierMask))
+                // Debug.DrawLine(humanPosition, hookPosition, Color.blue);
+                if (Physics.Linecast(humanPosition + randomDirection.normalized * 2f, hookPosition, BarrierMask))
                 {
                     LaunchHook(hookPosition);
+                }
+                else
+                {
+                    rawRandomDirection *= Mathf.Cos(-30f * Mathf.Deg2Rad);
+                    rawRandomDirection.y = Mathf.Sin(-30f * Mathf.Deg2Rad);
+                    randomDirection = directionQuaternion * rawRandomDirection;
+                    hookPosition = humanPosition + randomDirection * 115f;
+                    if (Physics.Linecast(humanPosition + randomDirection.normalized * 2f, hookPosition, out RaycastHit result, BarrierMask) && result.distance > 5f)
+                    {
+                        LaunchHook(hookPosition);
+                    }
+                }
+            }
+        }
+
+        public void FlightAround(Vector3 position, float radius, float safeRadius, float hookTolH = 5f, float hookTolY = 1f)
+        {
+            var hookPosition = GetHookPosition();
+            var humanPosition = _human.transform.position;
+            var direction = position - humanPosition;
+            var directionH = new Vector3(direction.x, 0f, direction.z);
+            var velocity = _human.Cache.Rigidbody.velocity;
+            var velocityH = new Vector3(velocity.x, 0f, velocity.z);
+            var clockwise = Vector3.SignedAngle(velocityH, directionH, Vector3.up) > 0;
+
+            var rotSign = clockwise ? -1f : 1f;
+            var dirH = new Vector3(direction.x, 0f, direction.z);
+            var rotDir = new Vector3(dirH.z, 0f, -dirH.x) * rotSign;
+
+            var hook2human = Vector3.Distance(hookPosition, _human.transform.position);
+            Move(rotDir.normalized);
+            Jump();
+            var hookDiff = hookPosition - position;
+            var hookDiffH = new Vector2(hookDiff.x, hookDiff.z).magnitude;
+            var hookDiffY = Mathf.Abs(hookDiff.y);
+            var isValidVelocity = velocity.magnitude > 0.1f && (Vector3.Angle(rotDir, velocityH) < 30f || Vector3.Angle(direction, velocity) < 30f);
+            var unbalance = Math.Abs(direction.y) < 1f && Vector3.Angle(velocity, Vector3.up) > 20f;
+            // Debug.Log(Vector3.Angle(rotDir, velocityH) + " valid angle " + Vector3.Angle(direction, velocity));
+            if (_human.IsHookedAny() && hookDiffH < hookTolH && hookDiffY < hookTolY && isValidVelocity && !unbalance)
+            {
+                if (hook2human < radius - 0.5f)
+                {
+                    // Debug.Log(hook2human + " : " + radius + " reelaxis " + ReelAxis);
+                    ReelOut();
+                    // Debug.Log(" reelaxis " + ReelAxis);
+                }
+                else if (hook2human > safeRadius * 2)
+                {
+                    ReelIn();
+                }
+            }
+            else if (!_human.HasHook())
+            {
+                hookPosition = humanPosition + direction.normalized * 115f;
+                if (directionH.magnitude > safeRadius && Physics.Linecast(humanPosition, hookPosition, out RaycastHit result, BarrierMask))
+                {
+                    if (result.distance > 5f)
+                    {
+                        LaunchHook(hookPosition);
+                    }
+                }
+                else
+                {
+                    Move((-dirH).normalized);
+                }
+            }
+            else if (_human.IsHookedAny())
+            {
+                if (_human.IsHookedAny() && (hookDiffH > hookTolH || hookDiffY > hookTolY || hook2human < safeRadius || unbalance))
+                {
+                    ReleaseHookAll();
+                }
+                else if (direction.magnitude > radius && _human.Pivot)
+                {
+                    ReelIn();
                 }
             }
         }
@@ -859,13 +956,13 @@ namespace Controllers
                 }
             }
 
+            // Debug.Log("closestDistance: " + closestDistance + " attackDistance: " + attackDistance);
             if (closestDistance < attackDistance && Vector3.Angle(targetProject, velocity) <= 90)
             {
                 // About advanceDistance: The attackDistance is greater than the sqrt(closestDistance^2, advanceDistance^2).
                 var advanceDistance = attackDistance - closestDistance;
                 return (distance2Closest - advanceDistance) / velocity.magnitude;
             }
-
             return Mathf.Infinity;
         }
 
@@ -924,7 +1021,6 @@ namespace Controllers
         {
             var point = result.point;
             var target2Point = point - TargetPosition;
-            Debug.DrawLine(transform.position, point, Color.red);
             return target2Point.magnitude <= tolDis;
         }
 
