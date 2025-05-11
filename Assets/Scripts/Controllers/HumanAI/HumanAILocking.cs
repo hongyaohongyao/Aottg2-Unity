@@ -233,14 +233,6 @@ namespace Controllers
                 }
                 return this;
             }
-            public float GetNapeAngle(BaseTitan titan)
-            {
-                var nape = titan.BaseTitanCache.NapeHurtbox.transform;
-                var a = nape.position - _human.transform.position;
-                a.y = 0f;
-                var b = new Vector3(nape.forward.x, 0f, nape.forward.z);
-                return Vector3.SignedAngle(a, b, Vector3.up);
-            }
 
             float SignedDistanceToDirection(Vector3 A, Vector3 B, Vector3 forward)
             {
@@ -260,7 +252,7 @@ namespace Controllers
                 {
                     if (!_human.Grounded)
                     {
-                        attackDistance = 3f;
+                        attackDistance = 2f;
                     }
                     else
                     {
@@ -268,36 +260,26 @@ namespace Controllers
                     }
 
                 }
-                // var napeBox = (CapsuleCollider)target.BaseTitanCache.NapeHurtbox;
-                // var globalScale = napeBox.transform.lossyScale;
-                // var napeRadius = napeBox.radius * Mathf.Max(globalScale.x, globalScale.y);
                 targetRadius = 2f;
                 var humanPosition = _human.transform.position;
                 var targetPosition = _controller.TargetPosition;
                 var targetDirection = _controller.TargetDirection;
-                // var start = humanPosition + targetDirection.normalized;
-                // var end = humanPosition + targetDirection.normalized * 120f;
                 var hookPosition = _controller.GetHookPosition();
-                var hookedTargetL = _controller.IsHookedTarget(_human.HookLeft, true);
-                var hookedTargetR = _controller.IsHookedTarget(_human.HookRight, true);
                 var moveBox = (CapsuleCollider)target.BaseTitanCache.Movebox;
-                var rawRadius = moveBox.radius * moveBox.transform.lossyScale.x * 2f;
-                var safeRadius = rawRadius * 1.2f;
-                var radius = rawRadius * 1.4f;
+                var rawRadius = moveBox.bounds.size.x;
+                var safeRadius = rawRadius;
+                var radius = rawRadius * 2f;
                 var velocity = _human.Cache.Rigidbody.velocity;
 
 
-                var isDirectlySeeingTarget = !Physics.Linecast(humanPosition + targetDirection.normalized, targetPosition, out RaycastHit result, HumanAIController.BarrierMask) || _controller.IsDirectlySeeingTarget(result, 0.1f);
+                var isDirectlySeeingTarget = !Physics.Linecast(humanPosition + targetDirection.normalized, targetPosition, out RaycastHit result, HumanAIController.BarrierMask) || _controller.IsDirectlySeeingTarget(result, 0.5f);
                 var flyAround = true;
-
-                Debug.DrawLine(humanPosition, targetPosition, Color.red);
 
                 if (isDirectlySeeingTarget && velocity.magnitude > 0.1f)
                 {
 
-                    // var cross = Vector3.Cross(_controller.TargetDirection, velocity);
                     var distance = SignedDistanceToDirection(_controller.TargetDirection, velocity, target.BaseTitanCache.NapeHurtbox.transform.forward);
-                    var isDirectlyFlightTo = distance > 0 && distance < attackDistance + targetRadius && !Physics.Linecast(humanPosition + velocity.normalized, humanPosition + Mathf.Abs(distance) * velocity.normalized, out result, HumanAIController.BarrierMask) || _controller.IsDirectlySeeingTarget(result, 0.1f);
+                    var isDirectlyFlightTo = distance > 0 && distance < attackDistance + targetRadius && !Physics.Linecast(humanPosition + velocity.normalized, humanPosition + Mathf.Abs(distance) * velocity.normalized, out result, HumanAIController.BarrierMask) || _controller.IsDirectlySeeingTarget(result, 0.5f);
                     if (isDirectlyFlightTo)
                     {
                         flyAround = false;
@@ -306,10 +288,9 @@ namespace Controllers
                     {
                         var reelVelocity = HumanAIController.CalcReelVelocity(humanPosition, hookPosition, velocity, -1f);
                         distance = SignedDistanceToDirection(_controller.TargetDirection, reelVelocity, target.BaseTitanCache.NapeHurtbox.transform.forward);
-                        var isReelFlightTo = distance > 0 && distance < attackDistance + targetRadius && !Physics.Linecast(humanPosition + reelVelocity.normalized, humanPosition + distance * reelVelocity.normalized, out result, HumanAIController.BarrierMask) || _controller.IsDirectlySeeingTarget(result, 0.1f);
+                        var isReelFlightTo = distance > 0 && distance < attackDistance + targetRadius && !Physics.Linecast(humanPosition + reelVelocity.normalized, humanPosition + distance * reelVelocity.normalized, out result, HumanAIController.BarrierMask) || _controller.IsDirectlySeeingTarget(result, 0.5f);
                         if (isReelFlightTo)
                         {
-                            Debug.Log("Attack Reel");
                             _controller.ReelIn();
                             flyAround = false;
                         }
@@ -318,11 +299,13 @@ namespace Controllers
 
                 if (flyAround)
                 {
-                    Debug.Log("scale: " + target.BaseTitanCache.Head.lossyScale.z + " " + safeRadius);
+                    // Debug.Log("scale: " + target.BaseTitanCache.Head.lossyScale.x + " " + safeRadius);
                     var mouthPos = target.BaseTitanCache.MouthHitbox.transform.position;
                     var napePos = target.BaseTitanCache.NapeHurtbox.transform.position;
                     // _controller.FlightAround(target.BaseTitanCache.NapeHurtbox.transform.position, radius, safeRadius, hookTolH: target.BaseTitanCache.Head.lossyScale.z / 2f);
-                    _controller.FlightAround(new Vector3(mouthPos.x, (napePos.y + mouthPos.y) * 0.5f, mouthPos.z), radius, safeRadius, hookTolH: target.BaseTitanCache.Head.lossyScale.z / 2f);
+                    var suggestedPos = new Vector3(mouthPos.x, (napePos.y + mouthPos.y) * 0.5f, mouthPos.z);
+                    var correctedPos = HumanAIController.CorrectShootPosition(humanPosition, suggestedPos, _controller.TargetVelocity, _controller.HookSpeed);
+                    _controller.FlightAround(correctedPos, radius, safeRadius, hookTolH: target.BaseTitanCache.Head.lossyScale.z / 2f);
                 }
                 else
                 {

@@ -44,9 +44,9 @@ namespace Controllers
         public int ReelAxis = 0;
 
         public bool DoHookLeft = false;
+        public bool DoHookLeftHooked = false;
         public bool DoHookRight = false;
-
-        public bool DoHookBoth = false;
+        public bool DoHookRightHooked = false;
 
         public float _hookLeftTimer = 0f;
         public float _hookRightTimer = 0f;
@@ -75,7 +75,7 @@ namespace Controllers
         public Vector3 TargetPosition;
         public Vector3 TargetDirection;
 
-        protected Vector3 _targetLastPosition;
+        protected Vector3? _targetLastPosition;
         public Vector3 TargetVelocity;
 
         public float LockingDistance = 100f;
@@ -117,16 +117,6 @@ namespace Controllers
             Automaton = new HumanAIAutomaton();
             Automaton.Init(this);
             Automaton.DefaultState = Automaton.GetState(HumanAIStates.Battle);
-            // _humanInput = SettingsManager.InputSettings.Human;
-        }
-
-
-        protected void Update()
-        {
-            if (!_human.FinishSetup)
-                return;
-            UpdateMovementInput();
-            UpdateActionInput();
         }
 
         protected void UpdateMovementInput()
@@ -177,48 +167,34 @@ namespace Controllers
             //TestScore();
             bool canHook = _human.State != HumanState.Grab && _human.State != HumanState.Stun && _human.Stats.CurrentGas > 0f
                 && _human.MountState != HumanMountState.MapObject && !_human.Dead;
-            bool hookBoth = DoHookBoth;
-            bool hookLeft = DoHookLeft;
-            bool hookRight = DoHookRight;
-            _human.HoldHookLeft = hookLeft;
-            _human.HoldHookRight = hookRight;
-            _human.HoldHookBoth = hookBoth;
-            bool hasHook = _human.HookLeft.HasHook() || _human.HookRight.HasHook();
-            if (_human.CancelHookBothKey)
-            {
-                if (hookBoth)
-                    hookBoth = false;
-                else
-                    _human.CancelHookBothKey = false;
-            }
+            _human.HoldHookLeft = DoHookLeft;
+            _human.HoldHookRight = DoHookRight;
+            _human.HoldHookBoth = false;
+            // bool hasHook = _human.HookLeft.HasHook() || _human.HookRight.HasHook();
             if (_human.CancelHookLeftKey)
             {
-                if (hookLeft)
-                    hookLeft = false;
+                if (DoHookLeft)
+                    DoHookLeft = false;
                 else
                     _human.CancelHookLeftKey = false;
             }
             if (_human.CancelHookRightKey)
             {
-                if (hookRight)
-                    hookRight = false;
+                if (DoHookRight)
+                    DoHookRight = false;
                 else
                     _human.CancelHookRightKey = false;
             }
-            _human.HookLeft.HookBoth = hookBoth && !hookLeft;
-            _human.HookRight.HookBoth = hookBoth && !hookRight;
-            _human.HookLeft.SetInput(canHook && !IsSpin3Special() && (hookLeft || (hookBoth && (_human.HookLeft.IsHooked() || !hasHook))));
-            _human.HookRight.SetInput(canHook && !IsSpin3Special() && (hookRight || (hookBoth && (_human.HookRight.IsHooked() || !hasHook))));
+            _human.HookLeft.HookBoth = false;
+            _human.HookRight.HookBoth = false;
+            _human.HookLeft.SetInput(canHook && !IsSpin3Special() && DoHookLeft);
+            _human.HookRight.SetInput(canHook && !IsSpin3Special() && DoHookRight);
 
-            if (_human.Stats.CurrentGas <= 0f && (hookLeft || hookRight || hookBoth))
+            if (_human.Stats.CurrentGas <= 0f && (DoHookLeft || DoHookRight))
             {
-                if (DoHookLeft || DoHookRight || DoHookBoth)
-                {
-                    DoHookLeft = false;
-                    DoHookRight = false;
-                    DoHookBoth = false;
-                    _human.PlaySoundRPC(HumanSounds.NoGas, Util.CreateLocalPhotonInfo());
-                }
+                DoHookLeft = false;
+                DoHookRight = false;
+                _human.PlaySoundRPC(HumanSounds.NoGas, Util.CreateLocalPhotonInfo());
             }
         }
 
@@ -227,8 +203,8 @@ namespace Controllers
 
         protected void UpdateActionInput()
         {
-            UpdateHookInput();
-            UpdateReelInput();
+            // UpdateHookInput();
+            // UpdateReelInput();
             //UpdateDashInput();
             bool canWeapon = _human.IsAttackableState && !_illegalWeaponStates.Contains(_human.State) && !_human.Dead;
             _human._gunArmAim = false;
@@ -393,14 +369,6 @@ namespace Controllers
             {
                 ReleaseHookAll();
             }
-            if (!_human.HookLeft.HasHook())
-            {
-                DoHookLeft = false;
-            }
-            if (!_human.HookRight.HasHook())
-            {
-                DoHookRight = false;
-            }
         }
 
         void ResetAction()
@@ -408,7 +376,6 @@ namespace Controllers
             DefaultAction();
             DoHookLeft = false;
             DoHookRight = false;
-            DoHookBoth = false;
         }
 
         public void Attack()
@@ -520,10 +487,12 @@ namespace Controllers
 
         public bool LaunchHookLeft(Vector3 position)
         {
-            if (_human.HookLeft.HookReady())
+            if (_hookLeftTimer <= 0f && _human.HookLeft.HookReady())
             {
+                _hookLeftTimer = 0.8f;
                 SetAimPoint(position);
                 DoHookLeft = true;
+                DoHookLeftHooked = false;
                 UpdateHookInput();
                 return true;
             }
@@ -534,8 +503,10 @@ namespace Controllers
         {
             if (_human.HookRight.HookReady())
             {
+                _hookRightTimer = 0.8f;
                 SetAimPoint(position);
                 DoHookRight = true;
+                DoHookRightHooked = false;
                 UpdateHookInput();
                 return true;
             }
@@ -544,33 +515,35 @@ namespace Controllers
 
         public bool LaunchHook(Vector3 position)
         {
-            if (_hookLeftTimer <= 0f && _human.HookLeft.HookReady())
+            if (LaunchHookLeft(position))
             {
-                _hookLeftTimer = 0.8f;
-                return LaunchHookLeft(position);
+
+                return true;
             }
-            else if (_hookRightTimer <= 0f && _human.HookRight.HookReady())
-            {
-                _hookRightTimer = 0.8f;
-                return LaunchHookRight(position);
-            }
-            return false;
+            return LaunchHookRight(position);
         }
 
         public void ReleaseHookLeft()
         {
             DoHookLeft = false;
+            DoHookLeftHooked = false;
+            UpdateHookInput();
         }
 
         public void ReleaseHookRight()
         {
             DoHookRight = false;
+            DoHookRightHooked = false;
+            UpdateHookInput();
         }
 
         public void ReleaseHookAll()
         {
             DoHookLeft = false;
             DoHookRight = false;
+            DoHookLeftHooked = false;
+            DoHookRightHooked = false;
+            UpdateHookInput();
         }
 
         public bool IsHookedTarget(HookUseable hook, bool needNape = false, bool fuzzy = false, float distannse2TargetTol = 5.0f)
@@ -630,21 +603,68 @@ namespace Controllers
             if (Target != null)
             {
                 var targetCurrentPosition = Target.GetPosition();
-                TargetVelocity = (targetCurrentPosition - _targetLastPosition) / Time.deltaTime;
+                if (_targetLastPosition is Vector3 p)
+                {
+                    TargetVelocity = (targetCurrentPosition - p) / Time.deltaTime;
+                }
+                else
+                {
+                    TargetVelocity = Vector3.zero;
+                }
                 _targetLastPosition = targetCurrentPosition;
+            }
+            else
+            {
+                TargetVelocity = Vector3.zero;
+                _targetLastPosition = null;
+            }
+        }
+
+        void AfterAction()
+        {
+            if (Target != null)
+            {
+                SetAimPoint(TargetPosition);
             }
         }
 
 
         protected override void FixedUpdate()
         {
-            DefaultAction();
             FixedUpdateTargetStatus();
+            DefaultAction();
             if (_hookLeftTimer > 0f)
+            {
                 _hookLeftTimer -= Time.deltaTime;
+                if (_human.HookLeft.IsHooked())
+                {
+                    DoHookLeftHooked = true;
+                }
+                if (_hookLeftTimer <= 0 && !DoHookLeftHooked)
+                {
+                    ReleaseHookLeft();
+                }
+            }
             if (_hookRightTimer > 0f)
+            {
                 _hookRightTimer -= Time.deltaTime;
+                if (_human.HookRight.IsHooked())
+                {
+                    DoHookRightHooked = true;
+                }
+                if (_hookRightTimer <= 0 && !DoHookRightHooked)
+                {
+                    ReleaseHookRight();
+                }
+            }
             Automaton.Action();
+            AfterAction();
+
+            // FixedUpdate is enough for ai
+            if (!_human.FinishSetup)
+                return;
+            UpdateMovementInput();
+            UpdateActionInput();
         }
 
         public bool IsTargetValid()
@@ -754,12 +774,6 @@ namespace Controllers
             {
                 Move(direction.normalized);
             }
-            // if (_human.Grounded)
-            // {
-            //     JumpTo(position);
-            //     ReleaseHookAll();
-            //     return;
-            // }
             Jump();
             if (_human.HasHook() || Vector3.Angle(direction, velocity) < tolAngle)
             {
@@ -778,18 +792,14 @@ namespace Controllers
                 {
                     var hookPosition = GetHookPosition();
                     var distance2hook = Vector3.Distance(hookPosition, humanPosition);
-                    // Debug.Log("isHook");
                     if (distance2hook > 5f)
                     {
-                        // Debug.Log("distance2hook");
                         if (_human.Pivot && !hitBarrier)
                         {
-                            // Debug.Log("hitBarrier");
                             var reelInVelocity = CalcReelVelocity(_human.transform.position, hookPosition, velocity, -1f);
 
                             if (Vector3.Angle(direction, reelInVelocity) < tolAngle)
                             {
-                                // Debug.Log("reelin");
                                 ReelIn();
                                 return;
                             }
@@ -809,27 +819,26 @@ namespace Controllers
                 {
                     Dodge(direction.normalized);
                 }
-                var directionQuaternion = Quaternion.LookRotation(direction.normalized);
-                var randomAngle = Random.Range(45.0f, 80.0f) * RandomGen.GetRandomSign() * Mathf.Deg2Rad;
-                var rawRandomDirection = new Vector3(Mathf.Sin(randomAngle), 0f, Mathf.Cos(randomAngle));
-                var randomDirection = directionQuaternion * rawRandomDirection;
-                var hookPosition = humanPosition + randomDirection * 115f;
-                // Debug.DrawLine(humanPosition, hookPosition, Color.blue);
-                if (Physics.Linecast(humanPosition + randomDirection.normalized * 2f, hookPosition, BarrierMask))
+                var directionH = new Vector3(direction.x, 0f, direction.z);
+                var directionQuaternion = Quaternion.LookRotation(directionH.normalized);
+                //TODO
+
+                for (int i = 1; i >= -1; i--)
                 {
-                    LaunchHook(hookPosition);
-                }
-                else
-                {
-                    rawRandomDirection *= Mathf.Cos(-30f * Mathf.Deg2Rad);
-                    rawRandomDirection.y = Mathf.Sin(-30f * Mathf.Deg2Rad);
-                    randomDirection = directionQuaternion * rawRandomDirection;
-                    hookPosition = humanPosition + randomDirection * 115f;
-                    if (Physics.Linecast(humanPosition + randomDirection.normalized * 2f, hookPosition, out RaycastHit result, BarrierMask) && result.distance > 5f)
+                    var randomAngle = Random.Range(30.0f, 80.0f) * RandomGen.GetRandomSign() * Mathf.Deg2Rad;
+                    var rawRandomDirection = new Vector3(Mathf.Sin(randomAngle), 0f, Mathf.Cos(randomAngle));
+                    rawRandomDirection *= Mathf.Cos(i * 30f * Mathf.Deg2Rad);
+                    rawRandomDirection.y = Mathf.Sin(i * 30f * Mathf.Deg2Rad);
+                    var randomDirection = directionQuaternion * rawRandomDirection;
+                    var hookPosition = humanPosition + randomDirection * 115f;
+                    if (Physics.Linecast(humanPosition + randomDirection.normalized * 2f, hookPosition, BarrierMask))
                     {
                         LaunchHook(hookPosition);
+                        break;
                     }
                 }
+
+                // Debug.DrawLine(humanPosition, hookPosition, Color.blue);
             }
         }
 
