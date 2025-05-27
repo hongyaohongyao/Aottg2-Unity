@@ -45,10 +45,6 @@ namespace Controllers
                     _controller.Reload();
                     return this;
                 }
-                else if (_human.State == HumanState.Reload)
-                {
-                    return this;
-                }
                 else if (_controller.NeedRefill())
                 {
                     return Automation.DefaultState;

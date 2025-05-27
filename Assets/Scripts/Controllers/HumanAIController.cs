@@ -201,12 +201,18 @@ namespace Controllers
         private HashSet<HumanState> _illegalWeaponStates = new HashSet<HumanState>() { HumanState.Grab, HumanState.SpecialAction, HumanState.EmoteAction, HumanState.Reload,
             HumanState.SpecialAttack, HumanState.Stun };
 
+        public bool IsInIllegalWeaponStates()
+        {
+            return _illegalWeaponStates.Contains(_human.State);
+        }
+
         protected void UpdateActionInput()
         {
             // UpdateHookInput();
             // UpdateReelInput();
             //UpdateDashInput();
             bool canWeapon = _human.IsAttackableState && !_illegalWeaponStates.Contains(_human.State) && !_human.Dead;
+            Debug.Log("State " + _human.State + " " + canWeapon);
             _human._gunArmAim = false;
             if (canWeapon)
             {
@@ -218,6 +224,10 @@ namespace Controllers
                 }
                 else
                 {
+                    if (_human.Weapon is AHSSWeapon)
+                    {
+                        _human._gunArmAim = _human.Weapon.IsActive;
+                    }
                     _human.Weapon.SetInput(DoAttack);
                 }
             }
@@ -385,7 +395,8 @@ namespace Controllers
 
         public void Reload()
         {
-            DoReload = true;
+            if (_human.State != HumanState.Reload && _human.State != HumanState.Attack && _human.State != HumanState.SpecialAction && _human.State != HumanState.SpecialAttack)
+                DoReload = true;
         }
 
         public bool NeedReload()
@@ -862,10 +873,12 @@ namespace Controllers
             var hookDiff = hookPosition - position;
             var hookDiffH = new Vector2(hookDiff.x, hookDiff.z).magnitude;
             var hookDiffY = Mathf.Abs(hookDiff.y);
-            var isValidVelocity = velocity.magnitude > 0.1f && (Vector3.Angle(rotDir, velocityH) < 30f || Vector3.Angle(direction, velocity) < 30f);
-            var unbalance = Math.Abs(direction.y) < 1f && Vector3.Angle(velocity, Vector3.up) > 20f;
+            // var isValidVelocity = velocity.magnitude > 0.1f && (Vector3.Angle(rotDir, velocityH) < 30f || Vector3.Angle(direction, velocity) < 30f);
+            var isValidVelocity = velocity.magnitude > 0.1f;
+            var unbalance = direction.y < 1f && Vector3.Angle(velocity, Vector3.up) > 20f && Vector3.Angle(velocity, direction) < 91f;
+            var isValidHooked = (hookDiffH < hookTolH && hookDiffY < hookTolY) || Vector3.Angle(velocity, direction) > 91f;
             // Debug.Log(Vector3.Angle(rotDir, velocityH) + " valid angle " + Vector3.Angle(direction, velocity));
-            if (_human.IsHookedAny() && hookDiffH < hookTolH && hookDiffY < hookTolY && isValidVelocity && !unbalance)
+            if (_human.IsHookedAny() && isValidHooked && isValidVelocity && !unbalance)
             {
                 if (hook2human < radius - 0.5f)
                 {
