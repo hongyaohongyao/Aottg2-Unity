@@ -49,7 +49,7 @@ namespace Map
                 if (logicHash != LogicHash)
                     Transfer(player);
                 else
-                    RPCManager.PhotonView.RPC("LoadCachedLogicRPC", player, new object[0]);
+                    RPCManager.PhotonView.RPC(nameof(RPCManager.LoadCachedLogicRPC), player, new object[0]);
             }
             LogicTransferReady = true;
         }
@@ -62,7 +62,7 @@ namespace Map
         private static void CreateTransferData()
         {
             LogicHash = Util.CreateMD5(CustomLogicManager.Logic);
-            byte[] compress = StringCompression.Compress(CustomLogicManager.Logic);
+            byte[] compress = DataCompressors.Brotli.CompressString(CustomLogicManager.Logic);
             _logicScriptCompressed = new List<byte>(compress);
             _logicTransferData = new List<byte[][]>();
             int chunkSize = 10000;
@@ -99,7 +99,7 @@ namespace Map
             _logicScriptCompressed.AddRange(byteArr[1]);
             if (msgType == MsgLogicEnd)
             {
-                CustomLogicManager.Logic = StringCompression.Decompress(_logicScriptCompressed.ToArray());
+                CustomLogicManager.Logic = DataCompressors.Brotli.DecompressString(_logicScriptCompressed.ToArray());
                 LogicHash = Encoding.UTF8.GetString(byteArr[2]);
                 CustomLogicManager.LogicHash = LogicHash;
                 CustomLogicManager.FinishLoadLogic();
@@ -110,7 +110,7 @@ namespace Map
         {
             for (int i = 0; i < _logicTransferData.Count; i++)
             {
-                RPCManager.PhotonView.RPC("TransferLogicRPC", player, new object[] { _logicTransferData[i], i, _logicTransferData.Count });
+                RPCManager.PhotonView.RPC(nameof(RPCManager.TransferLogicRPC), player, new object[] { _logicTransferData[i], i, _logicTransferData.Count });
                 yield return new WaitForSeconds(0.5f);
             }
         }

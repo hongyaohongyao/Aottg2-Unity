@@ -29,6 +29,10 @@ namespace Characters
                 BladesLeft--;
                 CurrentDurability = MaxDurability;
             }
+            else
+            {
+                CurrentDurability = 0f;
+            }
         }
 
         public override void Reset()
@@ -39,7 +43,11 @@ namespace Characters
 
         public override bool CanUse()
         {
-            return base.CanUse() && CurrentDurability > 0f && ((Human)_owner).State == HumanState.Idle;
+            return base.CanUse() && (CurrentDurability > 0f || BladesLeft == 0) && ((Human)_owner).State == HumanState.Idle;
+        }
+        public override bool HasDurability()
+        {
+            return CurrentDurability > 0f;
         }
 
         protected override void Activate()

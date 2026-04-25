@@ -207,6 +207,19 @@ namespace UI
             return dropdownSetting;
         }
 
+        public static GameObject CreateMultiSelectDropdown(Transform parent, ElementStyle style, HashSetSetting<int> setting, string title, string[] options,
+            string tooltip = "", float elementWidth = 140f, float elementHeight = 40f, float maxScrollHeight = 300f, float? optionsWidth = null,
+            UnityAction onSelectionChanged = null)
+        {
+            GameObject dropdownSetting = InstantiateAndBind(parent, "Prefabs/Elements/DropdownSetting");
+            MultiSelectDropdownElement element = dropdownSetting.AddComponent<MultiSelectDropdownElement>();
+            if (optionsWidth == null)
+                optionsWidth = elementWidth;
+            element.Setup(setting, style, title, options, tooltip, elementWidth, elementHeight, optionsWidth.Value,
+                maxScrollHeight, onSelectionChanged);
+            return dropdownSetting;
+        }
+
         public static GameObject CreateIncrementSetting(Transform parent, ElementStyle style, BaseSetting setting, string title, string tooltip = "",
             float elementWidth = 33f, float elementHeight = 30f, string[] options = null,
             UnityAction onValueChanged = null, Func<bool> validation = null)
@@ -246,11 +259,11 @@ namespace UI
 
         public static GameObject CreateInputSetting(Transform parent, ElementStyle style, BaseSetting setting, string title, string tooltip = "",
             float elementWidth = 140f, float elementHeight = 40f, bool multiLine = false,
-            UnityAction onValueChanged = null, UnityAction onEndEdit = null)
+            UnityAction onValueChanged = null, UnityAction onEndEdit = null, Func<string, bool> onValidate = null, Func<string, string> onCleanup = null)
         {
             GameObject inputSetting = InstantiateAndBind(parent, "Prefabs/Elements/InputSetting");
             InputSettingElement element = inputSetting.AddComponent<InputSettingElement>();
-            element.Setup(setting, style, title, tooltip, elementWidth, elementHeight, multiLine, onValueChanged, onEndEdit);
+            element.Setup(setting, style, title, tooltip, elementWidth, elementHeight, multiLine, onValueChanged, onEndEdit, onValidate, onCleanup);
             element.GetComponent<HorizontalLayoutGroup>().spacing = style.Spacing;
             return inputSetting;
         }

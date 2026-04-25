@@ -30,7 +30,17 @@ namespace UI
 
         protected override void OnSelectObject(string name)
         {
-            ((MapEditorMenu)UIManager.CurrentMenu).InspectPanel.OnSelectTexture(name);
+            var menu = (MapEditorMenu)UIManager.CurrentMenu;
+            if (menu.TexturePopupTarget != null)
+            {
+                var cb = menu.TexturePopupTarget;
+                menu.TexturePopupTarget = null;
+                cb(name);
+            }
+            else
+            {
+                menu.InspectPanel.OnSelectTexture(name);
+            }
             Parent.Hide();
         }
     }

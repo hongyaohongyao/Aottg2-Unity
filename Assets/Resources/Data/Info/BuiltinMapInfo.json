@@ -11,6 +11,9 @@
 					"Name": "Forest2"
 				},
 				{
+					"Name": "Forest2-optimized"
+				},
+				{
 					"Name": "Forest3"
 				},
 				{
@@ -98,7 +101,7 @@
 					"Name": "Outside The Walls",
 					"MiscSettings": {
 						"Horses": true,
-						"HorsebackCombat": false,
+						"HorsebackCombat": true,
 						"AllowPlayerTitans": false,
 						"AllowShifters": false
 					}
@@ -204,6 +207,10 @@
 				{
 					"Category": "General",
 					"Name": "Forest2"
+				},
+				{
+					"Category": "General",
+					"Name": "Forest2-optimized"
 				},
 				{
 					"Category": "General",
@@ -328,7 +335,7 @@
 					"Name": "ELOR 3"
 				},
 				{
-					"Name": "Makina ZYX + ZYX"
+					"Name": "Makina ABC"
 				},
 				{
 					"Name": "Future Trax 3"

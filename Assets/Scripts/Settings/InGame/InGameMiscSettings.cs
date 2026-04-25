@@ -18,7 +18,7 @@
         public BoolSetting AllowShifters = new BoolSetting(false);
         public BoolSetting AllowVoteKicking = new BoolSetting(false);
         public BoolSetting Horses = new BoolSetting(false);
-        public BoolSetting HorsebackCombat = new BoolSetting(false);
+        public BoolSetting HorsebackCombat = new BoolSetting(true);
         public BoolSetting GunsAirReload = new BoolSetting(true);
         public BoolSetting AllowStock = new BoolSetting(true);
         public BoolSetting ClearKDROnRestart = new BoolSetting(true);
@@ -27,6 +27,7 @@
         public FloatSetting RealismImpactThreshold = new FloatSetting(130f, minValue: 50f);
         public FloatSetting RealismMaxReel = new FloatSetting(120f, minValue: 0f);
         public FloatSetting RealismMaxSpeed = new FloatSetting(250f, minValue: 100f);
+        public IntSetting HookDamageMultiplier = new IntSetting(0, minValue: 0);
         public BoolSetting CustomStats = new BoolSetting(true);
         public BoolSetting CustomPerks = new BoolSetting(true);
         public StringSetting Motd = new StringSetting(string.Empty, maxLength: 1000);

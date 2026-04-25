@@ -25,6 +25,19 @@ namespace Cameras
         private bool _startDrag;
         private Vector3 _lastDragPosition;
 
+        // Clamp per-frame delta time so lag spikes / hitches don't translate into
+        // huge single-frame camera jumps. 1/30s is generous enough for low FPS
+        // but small enough to prevent teleporting during GC or asset-load stalls.
+        private const float MaxDeltaTime = 1f / 30f;
+        private static float GetClampedDeltaTime() => Mathf.Min(Time.deltaTime, MaxDeltaTime);
+
+        // Mouse deltas (Input.GetAxis("Mouse X/Y") and Input.mousePosition) are in pixels.
+        // In smaller windows the same pixel delta represents a larger fraction of the view,
+        // making rotation / pan feel faster and amplifying lag-spike jumps. Scale all mouse
+        // deltas by (currentHeight / referenceHeight) so sensitivity is resolution-independent.
+        private const float ReferenceScreenHeight = 1080f;
+        private static float GetScreenScale() => Mathf.Max(1f, Screen.height) / ReferenceScreenHeight;
+
         protected override void Awake()
         {
             base.Awake();
@@ -84,7 +97,8 @@ namespace Cameras
                 speed = _settings.CameraSlowMoveSpeed.Value;
             else if (_input.Fast.GetKey())
                 speed = _settings.CameraFastMoveSpeed.Value;
-             Cache.Transform.position += direction * Time.deltaTime * speed;
+            float dt = GetClampedDeltaTime();
+            Cache.Transform.position += direction * dt * speed;
             UpdateDragMovement(speed);
             UpdateZoomMovement(speed);
 
@@ -111,8 +125,10 @@ namespace Cameras
                 {
                     Vector2 delta = Input.mousePosition - _lastDragPosition;
                     _lastDragPosition = Input.mousePosition;
-                    Cache.Transform.position -= Cache.Transform.right * delta.x * Time.deltaTime * speed;
-                    Cache.Transform.position -= Cache.Transform.up * delta.y * Time.deltaTime * speed;
+                    float dt = GetClampedDeltaTime();
+                    float screenScale = GetScreenScale();
+                    Cache.Transform.position -= Cache.Transform.right * delta.x * dt * speed * screenScale;
+                    Cache.Transform.position -= Cache.Transform.up * delta.y * dt * speed * screenScale;
                 }
             }
             else if (_input.Pan.GetKeyUp())
@@ -126,20 +142,24 @@ namespace Cameras
         {
             if (_menu.IsMouseUI)
                 return;
+            var gameManager = SceneLoader.CurrentGameManager as MapEditorGameManager;
+            if (gameManager != null && gameManager.Brush != null && gameManager.Brush.Active)
+                return;
 
+            float dt = GetClampedDeltaTime();
             if (!Camera.orthographic)
             {
                 if (_input.ZoomIn.GetKey())
-                    Cache.Transform.position += Cache.Transform.forward * Time.deltaTime * speed * 2;
+                    Cache.Transform.position += Cache.Transform.forward * dt * speed * 2;
                 else if (_input.ZoomOut.GetKey())
-                    Cache.Transform.position -= Cache.Transform.forward * Time.deltaTime * speed * 2;
+                    Cache.Transform.position -= Cache.Transform.forward * dt * speed * 2;
             }
             else
             {
                 if (_input.ZoomIn.GetKey())
-                    Camera.orthographicSize -= Time.deltaTime * speed * 2;
+                    Camera.orthographicSize -= dt * speed * 2;
                 else if (_input.ZoomOut.GetKey())
-                    Camera.orthographicSize += Time.deltaTime * speed * 2;
+                    Camera.orthographicSize += dt * speed * 2;
             }
             
         }
@@ -154,8 +174,10 @@ namespace Cameras
                 float inputX = Input.GetAxis("Mouse X");
                 float inputY = Input.GetAxis("Mouse Y");
                 float speed = _settings.CameraRotateSpeed.Value;
-                Cache.Transform.RotateAround(Cache.Transform.position, Vector3.up, inputX * Time.deltaTime * speed);
-                Cache.Transform.RotateAround(Cache.Transform.position, Cache.Transform.right, -inputY * Time.deltaTime * speed);
+                float dt = GetClampedDeltaTime();
+                float screenScale = GetScreenScale();
+                Cache.Transform.RotateAround(Cache.Transform.position, Vector3.up, inputX * dt * speed * screenScale);
+                Cache.Transform.RotateAround(Cache.Transform.position, Cache.Transform.right, -inputY * dt * speed * screenScale);
                 _wasRotating = true;
             }
             
@@ -247,7 +269,7 @@ namespace Cameras
 
             if (!AlignedWithWorldAxis())
             {
-                Debug.Log("Not aligned with world axis");
+                // Debug.Log("Not aligned with world axis");
                 AlignToWorldAxis();
                 return;
             }

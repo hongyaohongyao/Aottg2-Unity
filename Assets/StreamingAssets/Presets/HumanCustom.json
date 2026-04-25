@@ -4,10 +4,10 @@
         "Sets" : [
             {
                 "Sex" : 1,
-                "Eye" : 2,
+                "Eye" : 52,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
-                "Hair" : "HairF7",
+                "Hair" : "HairF19",
                 "Costume" : 2,
                 "Boots" : 0,
                 "Cape" : 1,
@@ -59,67 +59,67 @@
                 "Preset" : true
             },
             {
-                "Sex" : 0,
-                "Eye" : 1,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairM7",
-                "Costume" : 2,
-                "Boots" : 0,
-                "Cape" : 1,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 0,
+                "Eye": 54,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairM21",
+                "Costume": 2,
+                "Boots": 0,
+                "Cape": 1,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     75,
                     75,
                     70,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"75\",\"Gas\":\"75\",\"Ammunition\":\"70\",\"Acceleration\":\"100\",\"Perks\":{}}",
-                "Name" : "Levi",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"75\",\"Gas\":\"75\",\"Ammunition\":\"70\",\"Acceleration\":\"100\",\"Perks\":{}}",
+                "Name": "Levi",
+                "Preset": true
             },
             {
                 "Sex" : 0,
-                "Eye" : 11,
+                "Eye" : 59,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
-                "Hair" : "HairM5",
+                "Hair" : "HairM23",
                 "Costume" : 8,
                 "Boots" : 0,
                 "Cape" : 1,
@@ -172,7 +172,7 @@
             },
             {
                 "Sex" : 0,
-                "Eye" : 8,
+                "Eye" : 53,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
                 "Hair" : "HairM8",
@@ -228,7 +228,7 @@
             },
             {
                 "Sex" : 0,
-                "Eye" : 7,
+                "Eye" : 55,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
                 "Hair" : "HairM6",
@@ -242,10 +242,10 @@
                     196,
                     255
                 ],
-                "HairColor" : [
-                    240,
-                    214,
-                    153,
+                "HairColor": [
+                    178,
+                    145,
+                    124,
                     255
                 ],
                 "ShirtColor" : [
@@ -284,10 +284,10 @@
             },
             {
                 "Sex" : 0,
-                "Eye" : 3,
+                "Eye" : 57,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
-                "Hair" : "HairM4",
+                "Hair" : "HairM22",
                 "Costume" : 4,
                 "Boots" : 0,
                 "Cape" : 1,
@@ -299,9 +299,9 @@
                     255
                 ],
                 "HairColor" : [
-                    75,
-                    75,
-                    70,
+                    69,
+                    60,
+                    58,
                     255
                 ],
                 "ShirtColor" : [
@@ -340,10 +340,10 @@
             },
             {
                 "Sex" : 1,
-                "Eye" : 27,
+                "Eye" : 50,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
-                "Hair" : "HairF8",
+                "Hair" : "HairF17",
                 "Costume" : 7,
                 "Boots" : 0,
                 "Cape" : 1,
@@ -354,10 +354,10 @@
                     196,
                     255
                 ],
-                "HairColor" : [
-                    255,
-                    185,
-                    96,
+                "HairColor": [
+                    200,
+                    122,
+                    86,
                     255
                 ],
                 "ShirtColor" : [
@@ -396,10 +396,10 @@
             },
             {
                 "Sex" : 1,
-                "Eye" : 4,
+                "Eye" : 48,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
-                "Hair" : "HairF10",
+                "Hair" : "HairF18",
                 "Costume" : 5,
                 "Boots" : 0,
                 "Cape" : 1,
@@ -452,10 +452,10 @@
             },
             {
                 "Sex" : 1,
-                "Eye" : 0,
+                "Eye" : 61,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
-                "Hair" : "HairF5",
+                "Hair" : "HairF14",
                 "Costume" : 0,
                 "Boots" : 0,
                 "Cape" : 1,
@@ -508,10 +508,10 @@
             },
             {
                 "Sex" : 1,
-                "Eye" : 5,
+                "Eye" : 56,
                 "Face" : "FaceNone",
                 "Glass" : "Glass1",
-                "Hair" : "HairF6",
+                "Hair" : "HairF13",
                 "Costume" : 7,
                 "Boots" : 0,
                 "Cape" : 1,
@@ -522,10 +522,10 @@
                     196,
                     255
                 ],
-                "HairColor" : [
-                    115,
-                    84,
-                    65,
+                "HairColor": [
+                    66,
+                    33,
+                    28,
                     255
                 ],
                 "ShirtColor" : [
@@ -564,10 +564,10 @@
             },
             {
                 "Sex" : 1,
-                "Eye" : 6,
+                "Eye" : 49,
                 "Face" : "FaceNone",
                 "Glass" : "Glass0",
-                "Hair" : "HairF9",
+                "Hair" : "HairF16",
                 "Costume" : 5,
                 "Boots" : 0,
                 "Cape" : 1,
@@ -620,7 +620,7 @@
             },
             {
                 "Sex" : 0,
-                "Eye" : 9,
+                "Eye" : 51,
                 "Face" : "Face0",
                 "Glass" : "GlassNone",
                 "Hair" : "HairM9",
@@ -676,7 +676,7 @@
             },
             {
                 "Sex" : 0,
-                "Eye" : 10,
+                "Eye" : 58,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
                 "Hair" : "HairM10",
@@ -736,176 +736,176 @@
         "SelectedSetIndex" : 0,
         "Sets" : [
             {
-                "Sex" : 1,
-                "Eye" : 2,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairF7",
-                "Costume" : 4,
-                "Boots" : 0,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 52,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairF19",
+                "Costume": 4,
+                "Boots": 0,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     38,
                     38,
                     38,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"80\",\"Gas\":\"70\",\"Ammunition\":\"75\",\"Acceleration\":\"95\",\"Perks\":{}}",
-                "Name" : "Mikasa",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"80\",\"Gas\":\"70\",\"Ammunition\":\"75\",\"Acceleration\":\"95\",\"Perks\":{}}",
+                "Name": "Mikasa",
+                "Preset": true
             },
             {
-                "Sex" : 0,
-                "Eye" : 1,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairM7",
-                "Costume" : 3,
-                "Boots" : 0,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 0,
+                "Eye": 54,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairM21",
+                "Costume": 3,
+                "Boots": 0,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     75,
                     75,
                     70,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"75\",\"Gas\":\"75\",\"Ammunition\":\"70\",\"Acceleration\":\"100\",\"Perks\":{}}",
-                "Name" : "Levi",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"75\",\"Gas\":\"75\",\"Ammunition\":\"70\",\"Acceleration\":\"100\",\"Perks\":{}}",
+                "Name": "Levi",
+                "Preset": true
             },
             {
-                "Sex" : 0,
-                "Eye" : 11,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairM5",
-                "Costume" : 9,
-                "Boots" : 0,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 0,
+                "Eye": 59,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairM23",
+                "Costume": 9,
+                "Boots": 0,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     242,
                     204,
                     128,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"70\",\"Gas\":\"90\",\"Ammunition\":\"90\",\"Acceleration\":\"70\",\"Perks\":{}}",
-                "Name" : "Armin",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"70\",\"Gas\":\"90\",\"Ammunition\":\"90\",\"Acceleration\":\"70\",\"Perks\":{}}",
+                "Name": "Armin",
+                "Preset": true
             },
             {
                 "Sex" : 0,
-                "Eye" : 8,
+                "Eye" : 53,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
                 "Hair" : "HairM8",
@@ -960,400 +960,400 @@
                 "Preset" : true
             },
             {
-                "Sex" : 0,
-                "Eye" : 7,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairM6",
-                "Costume" : 7,
-                "Boots" : 0,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 0,
+                "Eye": 55,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairM6",
+                "Costume": 7,
+                "Boots": 0,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
-                    240,
-                    214,
-                    153,
+                "HairColor": [
+                    178,
+                    145,
+                    124,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     161,
                     156,
                     133,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"70\",\"Gas\":\"100\",\"Ammunition\":\"75\",\"Acceleration\":\"75\",\"Perks\":{}}",
-                "Name" : "Jean",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"70\",\"Gas\":\"100\",\"Ammunition\":\"75\",\"Acceleration\":\"75\",\"Perks\":{}}",
+                "Name": "Jean",
+                "Preset": true
             },
             {
-                "Sex" : 0,
-                "Eye" : 3,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairM4",
-                "Costume" : 5,
-                "Boots" : 0,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 0,
+                "Eye": 57,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairM22",
+                "Costume": 5,
+                "Boots": 0,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
-                    75,
-                    75,
-                    70,
+                "HairColor": [
+                    69,
+                    60,
+                    58,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     221,
                     208,
                     176,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"70\",\"Gas\":\"85\",\"Ammunition\":\"80\",\"Acceleration\":\"85\",\"Perks\":{}}",
-                "Name" : "Eren",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"70\",\"Gas\":\"85\",\"Ammunition\":\"80\",\"Acceleration\":\"85\",\"Perks\":{}}",
+                "Name": "Eren",
+                "Preset": true
             },
             {
-                "Sex" : 1,
-                "Eye" : 27,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairF8",
-                "Costume" : 8,
-                "Boots" : 0,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 50,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairF17",
+                "Costume": 8,
+                "Boots": 0,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
-                    255,
-                    185,
-                    96,
+                "HairColor": [
+                    200,
+                    122,
+                    86,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"75\",\"Gas\":\"80\",\"Ammunition\":\"70\",\"Acceleration\":\"95\",\"Perks\":{}}",
-                "Name" : "Petra",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"75\",\"Gas\":\"80\",\"Ammunition\":\"70\",\"Acceleration\":\"95\",\"Perks\":{}}",
+                "Name": "Petra",
+                "Preset": true
             },
             {
-                "Sex" : 1,
-                "Eye" : 4,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairF10",
-                "Costume" : 6,
-                "Boots" : 0,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 48,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairF18",
+                "Costume": 6,
+                "Boots": 0,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     115,
                     84,
                     65,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     199,
                     189,
                     179,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"95\",\"Gas\":\"75\",\"Ammunition\":\"75\",\"Acceleration\":\"75\",\"Perks\":{}}",
-                "Name" : "Sasha",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"95\",\"Gas\":\"75\",\"Ammunition\":\"75\",\"Acceleration\":\"75\",\"Perks\":{}}",
+                "Name": "Sasha",
+                "Preset": true
             },
             {
-                "Sex" : 1,
-                "Eye" : 0,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairF5",
-                "Costume" : 1,
-                "Boots" : 0,
-                "Cape" : 0,
-                "Logo" : 3,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 61,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairF14",
+                "Costume": 1,
+                "Boots": 0,
+                "Cape": 0,
+                "Logo": 3,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     255,
                     230,
                     128,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"75\",\"Gas\":\"80\",\"Ammunition\":\"80\",\"Acceleration\":\"85\",\"Perks\":{}}",
-                "Name" : "Annie",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"75\",\"Gas\":\"80\",\"Ammunition\":\"80\",\"Acceleration\":\"85\",\"Perks\":{}}",
+                "Name": "Annie",
+                "Preset": true
             },
             {
-                "Sex" : 1,
-                "Eye" : 5,
-                "Face" : "FaceNone",
-                "Glass" : "Glass1",
-                "Hair" : "HairF6",
-                "Costume" : 8,
-                "Boots" : 0,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 56,
+                "Face": "FaceNone",
+                "Glass": "Glass1",
+                "Hair": "HairF13",
+                "Costume": 8,
+                "Boots": 0,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
-                    115,
-                    84,
-                    65,
+                "HairColor": [
+                    66,
+                    33,
+                    28,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     246,
                     220,
                     153,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"70\",\"Gas\":\"85\",\"Ammunition\":\"85\",\"Acceleration\":\"80\",\"Perks\":{}}",
-                "Name" : "Hanji",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"70\",\"Gas\":\"85\",\"Ammunition\":\"85\",\"Acceleration\":\"80\",\"Perks\":{}}",
+                "Name": "Hanji",
+                "Preset": true
             },
             {
-                "Sex" : 1,
-                "Eye" : 6,
-                "Face" : "FaceNone",
-                "Glass" : "Glass0",
-                "Hair" : "HairF9",
-                "Costume" : 6,
-                "Boots" : 0,
-                "Cape" : 0,
-                "Logo" : 2,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 49,
+                "Face": "FaceNone",
+                "Glass": "Glass0",
+                "Hair": "HairF16",
+                "Costume": 6,
+                "Boots": 0,
+                "Cape": 0,
+                "Logo": 2,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"75\",\"Gas\":\"85\",\"Ammunition\":\"90\",\"Acceleration\":\"70\",\"Perks\":{}}",
-                "Name" : "Rico",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"75\",\"Gas\":\"85\",\"Ammunition\":\"90\",\"Acceleration\":\"70\",\"Perks\":{}}",
+                "Name": "Rico",
+                "Preset": true
             },
             {
                 "Sex" : 0,
-                "Eye" : 9,
+                "Eye" : 51,
                 "Face" : "Face0",
                 "Glass" : "GlassNone",
                 "Hair" : "HairM9",
@@ -1409,7 +1409,7 @@
             },
             {
                 "Sex" : 0,
-                "Eye" : 10,
+                "Eye" : 58,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
                 "Hair" : "HairM10",
@@ -1469,176 +1469,176 @@
         "SelectedSetIndex" : 0,
         "Sets" : [
             {
-                "Sex" : 1,
-                "Eye" : 2,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairF7",
-                "Costume" : 4,
-                "Boots" : 1,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 52,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairF19",
+                "Costume": 4,
+                "Boots": 1,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     38,
                     38,
                     38,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"80\",\"Gas\":\"70\",\"Ammunition\":\"75\",\"Acceleration\":\"95\",\"Perks\":{}}",
-                "Name" : "Mikasa",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"80\",\"Gas\":\"70\",\"Ammunition\":\"75\",\"Acceleration\":\"95\",\"Perks\":{}}",
+                "Name": "Mikasa",
+                "Preset": true
             },
             {
-                "Sex" : 0,
-                "Eye" : 1,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairM7",
-                "Costume" : 3,
-                "Boots" : 1,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 0,
+                "Eye": 54,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairM21",
+                "Costume": 3,
+                "Boots": 1,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     75,
                     75,
                     70,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"75\",\"Gas\":\"75\",\"Ammunition\":\"70\",\"Acceleration\":\"100\",\"Perks\":{}}",
-                "Name" : "Levi",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"75\",\"Gas\":\"75\",\"Ammunition\":\"70\",\"Acceleration\":\"100\",\"Perks\":{}}",
+                "Name": "Levi",
+                "Preset": true
             },
             {
-                "Sex" : 0,
-                "Eye" : 11,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairM5",
-                "Costume" : 9,
-                "Boots" : 1,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 0,
+                "Eye": 59,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairM23",
+                "Costume": 9,
+                "Boots": 1,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     242,
                     204,
                     128,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"70\",\"Gas\":\"90\",\"Ammunition\":\"90\",\"Acceleration\":\"70\",\"Perks\":{}}",
-                "Name" : "Armin",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"70\",\"Gas\":\"90\",\"Ammunition\":\"90\",\"Acceleration\":\"70\",\"Perks\":{}}",
+                "Name": "Armin",
+                "Preset": true
             },
             {
                 "Sex" : 0,
-                "Eye" : 8,
+                "Eye" : 53,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
                 "Hair" : "HairM8",
@@ -1693,400 +1693,400 @@
                 "Preset" : true
             },
             {
-                "Sex" : 0,
-                "Eye" : 7,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairM6",
-                "Costume" : 7,
-                "Boots" : 1,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 0,
+                "Eye": 55,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairM6",
+                "Costume": 7,
+                "Boots": 1,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
-                    240,
-                    214,
-                    153,
+                "HairColor": [
+                    178,
+                    145,
+                    124,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     161,
                     156,
                     133,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"70\",\"Gas\":\"100\",\"Ammunition\":\"75\",\"Acceleration\":\"75\",\"Perks\":{}}",
-                "Name" : "Jean",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"70\",\"Gas\":\"100\",\"Ammunition\":\"75\",\"Acceleration\":\"75\",\"Perks\":{}}",
+                "Name": "Jean",
+                "Preset": true
             },
             {
-                "Sex" : 0,
-                "Eye" : 3,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairM4",
-                "Costume" : 5,
-                "Boots" : 1,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 0,
+                "Eye": 57,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairM22",
+                "Costume": 5,
+                "Boots": 1,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
-                    75,
-                    75,
-                    70,
+                "HairColor": [
+                    69,
+                    60,
+                    58,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     221,
                     208,
                     176,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"70\",\"Gas\":\"85\",\"Ammunition\":\"80\",\"Acceleration\":\"85\",\"Perks\":{}}",
-                "Name" : "Eren",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"70\",\"Gas\":\"85\",\"Ammunition\":\"80\",\"Acceleration\":\"85\",\"Perks\":{}}",
+                "Name": "Eren",
+                "Preset": true
             },
             {
-                "Sex" : 1,
-                "Eye" : 27,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairF8",
-                "Costume" : 8,
-                "Boots" : 1,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 50,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairF17",
+                "Costume": 8,
+                "Boots": 1,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
-                    255,
-                    185,
-                    96,
+                "HairColor": [
+                    200,
+                    122,
+                    86,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"75\",\"Gas\":\"80\",\"Ammunition\":\"70\",\"Acceleration\":\"95\",\"Perks\":{}}",
-                "Name" : "Petra",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"75\",\"Gas\":\"80\",\"Ammunition\":\"70\",\"Acceleration\":\"95\",\"Perks\":{}}",
+                "Name": "Petra",
+                "Preset": true
             },
             {
-                "Sex" : 1,
-                "Eye" : 4,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairF10",
-                "Costume" : 6,
-                "Boots" : 1,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 48,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairF18",
+                "Costume": 6,
+                "Boots": 1,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     115,
                     84,
                     65,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     199,
                     189,
                     179,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"95\",\"Gas\":\"75\",\"Ammunition\":\"75\",\"Acceleration\":\"75\",\"Perks\":{}}",
-                "Name" : "Sasha",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"95\",\"Gas\":\"75\",\"Ammunition\":\"75\",\"Acceleration\":\"75\",\"Perks\":{}}",
+                "Name": "Sasha",
+                "Preset": true
             },
             {
-                "Sex" : 1,
-                "Eye" : 0,
-                "Face" : "FaceNone",
-                "Glass" : "GlassNone",
-                "Hair" : "HairF5",
-                "Costume" : 1,
-                "Boots" : 1,
-                "Cape" : 0,
-                "Logo" : 3,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 61,
+                "Face": "FaceNone",
+                "Glass": "GlassNone",
+                "Hair": "HairF14",
+                "Costume": 1,
+                "Boots": 1,
+                "Cape": 0,
+                "Logo": 3,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     255,
                     230,
                     128,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"75\",\"Gas\":\"80\",\"Ammunition\":\"80\",\"Acceleration\":\"85\",\"Perks\":{}}",
-                "Name" : "Annie",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"75\",\"Gas\":\"80\",\"Ammunition\":\"80\",\"Acceleration\":\"85\",\"Perks\":{}}",
+                "Name": "Annie",
+                "Preset": true
             },
             {
-                "Sex" : 1,
-                "Eye" : 5,
-                "Face" : "FaceNone",
-                "Glass" : "Glass1",
-                "Hair" : "HairF6",
-                "Costume" : 8,
-                "Boots" : 1,
-                "Cape" : 0,
-                "Logo" : 1,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 56,
+                "Face": "FaceNone",
+                "Glass": "Glass1",
+                "Hair": "HairF13",
+                "Costume": 8,
+                "Boots": 1,
+                "Cape": 0,
+                "Logo": 1,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
-                    115,
-                    84,
-                    65,
+                "HairColor": [
+                    66,
+                    33,
+                    28,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     246,
                     220,
                     153,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"70\",\"Gas\":\"85\",\"Ammunition\":\"85\",\"Acceleration\":\"80\",\"Perks\":{}}",
-                "Name" : "Hanji",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"70\",\"Gas\":\"85\",\"Ammunition\":\"85\",\"Acceleration\":\"80\",\"Perks\":{}}",
+                "Name": "Hanji",
+                "Preset": true
             },
             {
-                "Sex" : 1,
-                "Eye" : 6,
-                "Face" : "FaceNone",
-                "Glass" : "Glass0",
-                "Hair" : "HairF9",
-                "Costume" : 6,
-                "Boots" : 1,
-                "Cape" : 0,
-                "Logo" : 2,
-                "SkinColor" : [
+                "Sex": 1,
+                "Eye": 49,
+                "Face": "FaceNone",
+                "Glass": "Glass0",
+                "Hair": "HairF16",
+                "Costume": 6,
+                "Boots": 1,
+                "Cape": 0,
+                "Logo": 2,
+                "SkinColor": [
                     255,
                     220,
                     196,
                     255
                 ],
-                "HairColor" : [
+                "HairColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "ShirtColor" : [
+                "ShirtColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "StrapsColor" : [
+                "StrapsColor": [
                     98,
                     81,
                     65,
                     255
                 ],
-                "PantsColor" : [
+                "PantsColor": [
                     255,
                     255,
                     255,
                     255
                 ],
-                "JacketColor" : [
+                "JacketColor": [
                     183,
                     144,
                     107,
                     255
                 ],
-                "BootsColor" : [
+                "BootsColor": [
                     49,
                     36,
                     33,
                     255
                 ],
-                "Stats" : "{\"Speed\":\"75\",\"Gas\":\"85\",\"Ammunition\":\"90\",\"Acceleration\":\"70\",\"Perks\":{}}",
-                "Name" : "Rico",
-                "Preset" : true
+                "Stats": "{\"Speed\":\"75\",\"Gas\":\"85\",\"Ammunition\":\"90\",\"Acceleration\":\"70\",\"Perks\":{}}",
+                "Name": "Rico",
+                "Preset": true
             },
             {
                 "Sex" : 0,
-                "Eye" : 9,
+                "Eye" : 51,
                 "Face" : "Face0",
                 "Glass" : "GlassNone",
                 "Hair" : "HairM9",
@@ -2142,7 +2142,7 @@
             },
             {
                 "Sex" : 0,
-                "Eye" : 10,
+                "Eye" : 58,
                 "Face" : "FaceNone",
                 "Glass" : "GlassNone",
                 "Hair" : "HairM10",

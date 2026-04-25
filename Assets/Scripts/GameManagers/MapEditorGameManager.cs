@@ -40,6 +40,7 @@ namespace GameManagers
         public RotationGizmo _rotationGizmo;
         public ScaleGizmo _scaleGizmo;
         private OutlineGizmo _outlineGizmo;
+        public MapEditorBrush Brush = new MapEditorBrush();
         private int _currentObjectId;
         public bool IgnoreNextSelect;
         private bool _isDrag;
@@ -163,6 +164,10 @@ namespace GameManagers
 
         public void Select(bool multi)
         {
+            // Selection is disabled while the brush tool is active so that clicking
+            // to paint doesn't also pick whatever object is under the cursor.
+            if (Brush != null && Brush.Active)
+                return;
             var camera = SceneLoader.CurrentCamera;
             Vector3 diff = Input.mousePosition - _dragStart;
             RaycastHit hit;
@@ -289,7 +294,115 @@ namespace GameManagers
         protected void Update()
         {
             UpdateInput();
+            UpdateBrush();
             UpdateDrag();
+        }
+
+        protected void UpdateBrush()
+        {
+            if (Brush == null || !Brush.Active) return;
+            if (_menu == null) return;
+            if (_menu.IsPopupActive() || _menu.IsMouseUI)
+            {
+                Brush.ClearCenter();
+                return;
+            }
+            var system = EventSystem.current;
+            var selected = system != null ? system.currentSelectedGameObject : null;
+            if (selected != null && selected.GetComponent<InputField>() != null)
+            {
+                Brush.ClearCenter();
+                return;
+            }
+            var camera = SceneLoader.CurrentCamera;
+            if (camera == null) return;
+            Ray ray = camera.Camera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            if (Physics.Raycast(ray, out hit, 100000f, PhysicsLayer.GetMask(PhysicsLayer.MapEditorObject)))
+                Brush.SetCenter(hit.point);
+            else
+                Brush.ClearCenter();
+
+            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            bool shift = _input.BrushCount.GetKey();
+            bool ctrl = _input.BrushCurve.GetKey();
+            if (Brush.Mode == BrushMode.Grid)
+            {
+                if (_input.BrushCurveAxisX.GetKeyDown()) Brush.CurveAxis = 1;
+                else if (_input.BrushCurveAxisY.GetKeyDown()) Brush.CurveAxis = 2;
+                else if (_input.BrushCurveAxisZ.GetKeyDown()) Brush.CurveAxis = 3;
+                else if (_input.BrushCurveAxisNone.GetKeyDown()) Brush.CurveAxis = 0;
+                if (Mathf.Abs(scroll) > 0.0001f)
+                {
+                    // Scroll alone: spacing along the growth axis (falls back to X).
+                    // Shift+scroll: add/remove objects along the growth axis.
+                    // Ctrl+scroll: curve amount along the growth axis.
+                    int axis = Brush.CurveAxis == 0 ? 1 : Brush.CurveAxis;
+                    int sign = scroll > 0f ? 1 : -1;
+                    if (ctrl)
+                    {
+                        Brush.CurveAmount += sign * 0.5f;
+                    }
+                    else if (shift)
+                    {
+                        if (axis == 1) Brush.GridX = Mathf.Max(1, Brush.GridX + sign);
+                        else if (axis == 2) Brush.GridY = Mathf.Max(1, Brush.GridY + sign);
+                        else if (axis == 3) Brush.GridZ = Mathf.Max(1, Brush.GridZ + sign);
+                    }
+                    else
+                    {
+                        // Scale spacing step to roughly 10% of the asset's bounding box along the growth axis
+                        // so scrolling through a few ticks makes a visible difference regardless of asset size.
+                        Vector3 avg = Brush.GetAverageGhostSize();
+                        float axisSize = axis == 1 ? avg.x : axis == 2 ? avg.y : avg.z;
+                        float step = Mathf.Max(0.5f, axisSize * 0.1f);
+                        if (axis == 1) Brush.SpacingX = Mathf.Max(0f, Brush.SpacingX + sign * step);
+                        else if (axis == 2) Brush.SpacingY = Mathf.Max(0f, Brush.SpacingY + sign * step);
+                        else if (axis == 3) Brush.SpacingZ = Mathf.Max(0f, Brush.SpacingZ + sign * step);
+                    }
+                    Brush.RegenerateGhosts();
+                    _menu.SyncBrushPanelValues();
+                }
+            }
+            else if (Mathf.Abs(scroll) > 0.0001f)
+                Brush.SetRadius(Brush.Radius * (1f + scroll * 2f));
+
+            if (_input.BrushReroll.GetKeyDown())
+            {
+                Brush.Reseed();
+                Brush.RegenerateGhosts();
+            }
+
+            if (_input.Select.GetKeyDown())
+                PlaceBrush();
+        }
+
+        private void PlaceBrush()
+        {
+            if (!Brush.Active) return;
+            var placements = Brush.BuildPlacements();
+            if (placements.Count == 0) return;
+            NewCommand(new AddObjectCommand(placements));
+            _menu.SyncHierarchyPanel();
+            if (Brush.RandomizeEachPlacement)
+                Brush.Reseed();
+            Brush.RegenerateGhosts();
+        }
+
+        public void ToggleBrush()
+        {
+            bool active = !Brush.Active;
+            Brush.SetActive(active);
+            if (active)
+            {
+                DeselectAll();
+                _menu.ShowBrushPanel();
+            }
+            else
+            {
+                _menu.HideBrushPanel();
+            }
+            OnSelectionChange();
         }
 
         protected void UpdateDrag()
@@ -378,8 +491,8 @@ namespace GameManagers
                 if (!MapLoader.IdToMapObject.ContainsKey(obj.ScriptObject.Id))
                     DeselectObject(obj);
             }
-            if (SelectedObjects.Count == 1)
-                _menu.ShowInspector(new List<MapObject>(SelectedObjects)[0]);
+            if (SelectedObjects.Count >= 1 && !Brush.Active)
+                _menu.ShowInspector(new List<MapObject>(SelectedObjects));
             else
                 _menu.HideInspector();
             _menu.HierarchyPanel.SyncSelectedItems();
@@ -477,6 +590,7 @@ namespace GameManagers
                                 light.type = LightType.Directional;
                                 light.color = colorSetting.Value.ToColor();
                                 light.intensity = intensitySetting.Value;
+                                light.shadows = LightShadows.Hard;
                                 break;
                             }
                         }
@@ -500,7 +614,7 @@ namespace GameManagers
             }
         }
 
-        public void SetLayerVisibility(MapEditorTopPanel.LayerOption index)
+        public void SetLayerVisibility(HashSetSetting<int> selectedLayers)
         {
             foreach (var obj in MapLoader.IdToMapObject.Values)
             {
@@ -508,25 +622,43 @@ namespace GameManagers
                     continue;
 
                 var sceneObject = (MapScriptSceneObject)obj.ScriptObject;
-                bool matchesFilter = index switch
+                bool matchesFilter = false;
+
+                // If "All" is selected, show everything
+                if (selectedLayers.Contains((int)LayerOption.All))
                 {
-                    LayerOption.All => true,
-                    LayerOption.Visible => sceneObject.Visible,
-                    LayerOption.Invisible => !sceneObject.Visible,
-                    LayerOption.Active => sceneObject.Active,
-                    LayerOption.Inactive => !sceneObject.Active,
-                    LayerOption.Static => sceneObject.Static,
-                    LayerOption.NonStatic => !sceneObject.Static,
-                    LayerOption.Networked => sceneObject.Networked,
-                    LayerOption.NonNetworked => !sceneObject.Networked,
-                    LayerOption.Triggers => sceneObject.CollideMode == "Region",
-                    LayerOption.Colliders => sceneObject.CollideMode == "Physical",
-                    LayerOption.NoColliders => sceneObject.CollideMode == "None",
-                    _ => true,
-                };
+                    matchesFilter = true;
+                }
+                else
+                {
+                    // Check each selected filter - object matches if it passes ANY selected filter
+                    foreach (int layerIndex in selectedLayers.Value)
+                    {
+                        LayerOption option = (LayerOption)layerIndex;
+                        bool matches = option switch
+                        {
+                            LayerOption.Visible => sceneObject.Visible,
+                            LayerOption.Invisible => !sceneObject.Visible,
+                            LayerOption.Active => sceneObject.Active,
+                            LayerOption.Inactive => !sceneObject.Active,
+                            LayerOption.Static => sceneObject.Static,
+                            LayerOption.NonStatic => !sceneObject.Static,
+                            LayerOption.Networked => sceneObject.Networked,
+                            LayerOption.NonNetworked => !sceneObject.Networked,
+                            LayerOption.Triggers => sceneObject.CollideMode == "Region",
+                            LayerOption.Colliders => sceneObject.CollideMode == "Physical",
+                            LayerOption.NoColliders => sceneObject.CollideMode == "None",
+                            _ => false,
+                        };
+                        if (matches)
+                        {
+                            matchesFilter = true;
+                            break;
+                        }
+                    }
+                }
 
                 obj.GameObject.SetActive(matchesFilter);
-
             }
         }
     }

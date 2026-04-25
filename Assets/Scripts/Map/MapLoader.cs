@@ -1,6 +1,6 @@
 ﻿using ApplicationManagers;
-using CustomLogic;
 using Events;
+using MapEditor;
 using Photon.Pun;
 using Settings;
 using System.Collections;
@@ -16,7 +16,7 @@ using NavMeshBuilder = UnityEngine.AI.NavMeshBuilder;
 
 namespace Map
 {
-    class MapLoader: MonoBehaviour
+    class MapLoader : MonoBehaviour
     {
         public static Dictionary<int, MapObject> IdToMapObject = new Dictionary<int, MapObject>();
         public static Dictionary<int, HashSet<int>> IdToChildren = new Dictionary<int, HashSet<int>>();
@@ -41,6 +41,8 @@ namespace Map
         private static List<NavMeshBuildSource> _navMeshSources = new List<NavMeshBuildSource>();
         private static Bounds _navMeshBounds = new Bounds(Vector3.zero, Vector3.zero);
         private static Dictionary<int, NavMeshData> _navMeshData = new Dictionary<int, NavMeshData>();
+        public static int ROOT_OBJECT_ID = -1;
+        public static int NETWORK_OFFSET = 1000;    // start at -1000 to avoid conflicts with map object ids.
 
         public static void Init()
         {
@@ -91,30 +93,11 @@ namespace Map
             _instance.StartCoroutine(_instance.LoadObjectsCoroutine(customAssets, objects, editor));
         }
 
-        /*
-        public static void LoadBackground(string background, Vector3 position, Vector3 rotation)
+        public static MapLight RegisterMapLight(Light light, bool isDaylight)
         {
-            if (_background != null)
-                Destroy(_background);
-            try
-            {
-                if (background == "None")
-                    return;
-                _background = ResourceManager.InstantiateAsset<GameObject>(ResourcePaths.Map, "Background/Prefabs/" + background);
-                var center = _background.transform.Find("Center").localPosition;
-                _background.transform.position = position - center;
-                _background.transform.rotation = Quaternion.Euler(rotation);
-            }
-            catch
-            {
-                Debug.Log("Error loading map background: " + background);
-            }
-        }
-        */
-
-        public static void RegisterMapLight(Light light, bool isDaylight)
-        {
-            MapLights.Add(new MapLight(light, isDaylight));
+            MapLight mapLight = new MapLight(light, isDaylight);
+            MapLights.Add(mapLight);
+            return mapLight;
         }
 
         public static MapObject FindObjectFromCollider(Collider collider)
@@ -182,7 +165,6 @@ namespace Map
             }
         }
 
-
         public static void DeleteObject(MapObject obj)
         {
             if (IdToMapObject.ContainsKey(obj.ScriptObject.Id) == false)
@@ -191,7 +173,7 @@ namespace Map
                 GameObject.Destroy(obj.GameObject);
                 return;
             }
-                
+
             int id = obj.ScriptObject.Id;
             DeleteObject(id);
         }
@@ -270,7 +252,7 @@ namespace Map
             if (!editor)
                 Batch();
 
-            
+
 
             if (MapManager.NeedsNavMeshUpdate || _hasNavMeshData == false)
             {
@@ -345,14 +327,14 @@ namespace Map
                             var t = src.sourceObject as TerrainData;
                             result.Encapsulate(GetWorldBounds(worldToLocal * src.transform, new Bounds(0.5f * t.size, t.size)));
                             break;
-/*#if NMC_CAN_ACCESS_TERRAIN
-                            // Terrain pivot is lower/left corner - shift bounds accordingly
-                            var t = src.sourceObject as TerrainData;
-                            result.Encapsulate(GetWorldBounds(worldToLocal * src.transform, new Bounds(0.5f * t.size, t.size)));
-#else
-                            Debug.LogWarning("The NavMesh cannot be properly baked for the terrain because the necessary functionality is missing. Add the com.unity.modules.terrain package through the Package Manager.");
-#endif
-                            break;*/
+                            /*#if NMC_CAN_ACCESS_TERRAIN
+                                                        // Terrain pivot is lower/left corner - shift bounds accordingly
+                                                        var t = src.sourceObject as TerrainData;
+                                                        result.Encapsulate(GetWorldBounds(worldToLocal * src.transform, new Bounds(0.5f * t.size, t.size)));
+                            #else
+                                                        Debug.LogWarning("The NavMesh cannot be properly baked for the terrain because the necessary functionality is missing. Add the com.unity.modules.terrain package through the Package Manager.");
+                            #endif
+                                                        break;*/
                         }
                     case NavMeshBuildSourceShape.Box:
                     case NavMeshBuildSourceShape.Sphere:
@@ -473,61 +455,98 @@ namespace Map
 
         private void Batch()
         {
+            const int gridSize = 1000;
+
             Dictionary<string, GameObject> roots = new Dictionary<string, GameObject>();
             Dictionary<string, List<GameObject>> shared = new Dictionary<string, List<GameObject>>();
             Dictionary<GameObject, Transform> oldParents = new Dictionary<GameObject, Transform>();
             Dictionary<string, int> hashCounts = new Dictionary<string, int>();
-            GameObject batchRoot = new GameObject("Batched Meshes");
+
+            GameObject batchRoot = new GameObject("Batched Scene");
+
+            GameObject originalRoot = new GameObject("Original Objects");
+            originalRoot.transform.SetParent(batchRoot.transform);
+
+            GameObject combinedRoot = new GameObject("Combined Meshes");
+            combinedRoot.transform.SetParent(batchRoot.transform);
+
             foreach (int id in IdToMapObject.Keys)
             {
                 var mapObject = IdToMapObject[id];
+
                 if (mapObject.ScriptObject.Parent > 0 || !mapObject.ScriptObject.Static)
                     continue;
 
                 var shader = ((MapScriptSceneObject)mapObject.ScriptObject).Material.Shader;
+
                 if (MapObjectShader.IsLegacyShader(shader) || shader == MapObjectShader.Transparent)
                     continue;
+
                 var position = mapObject.GameObject.transform.position;
 
-                string positionHash = ((int)(position.x / 1000f)).ToString() + "-" + ((int)(position.y / 1000f)).ToString() + "-" + ((int)(position.z / 1000f)).ToString();
+                string positionHash = ((int)(position.x / gridSize)).ToString() + "-" + ((int)(position.y / gridSize)).ToString() + "-" + ((int)(position.z / gridSize)).ToString();
+
                 foreach (MeshFilter filter in mapObject.GameObject.GetComponentsInChildren<MeshFilter>())
                 {
                     var renderer = filter.GetComponent<Renderer>();
+
                     if (renderer == null || renderer.sharedMaterials.Length > 1)
                         continue;
-                    if (filter?.sharedMesh == null)
+
+                    if (filter.sharedMesh == null)
                     {
                         DebugConsole.Log($"Map load error: object {mapObject.ScriptObject.Name} with missing mesh", true);
                         Errors.Add("Failed to load static object with no MeshFilter or SharedMesh: " + mapObject.ScriptObject.Name);
                         continue;
                     }
-                    string hash = filter.sharedMesh.GetHashCode().ToString();
+
+                    // Skip GPU instanced materials
+                    if (renderer.sharedMaterial != null && renderer.sharedMaterial.enableInstancing)
+                        continue;
+
+                    string hash = filter.sharedMesh.GetInstanceID().ToString();
                     hash += positionHash;
+
                     if (renderer.enabled)
-                        hash += renderer.sharedMaterial.GetHashCode().ToString();
+                        hash += renderer.sharedMaterial.GetInstanceID().ToString();
                     else
                         hash += "disabled";
+
                     if (!hashCounts.ContainsKey(hash))
                         hashCounts.Add(hash, 0);
-                    int meshPerHash = 65000 / filter.sharedMesh.vertexCount;
+
+                    int meshPerHash = Mathf.Max(1, 65000 / filter.sharedMesh.vertexCount);
+
                     hashCounts[hash] += 1;
+
                     hash += (hashCounts[hash] / meshPerHash).ToString();
+
                     if (!roots.ContainsKey(hash))
                     {
-                        var go = new GameObject();
-                        go.name = mapObject.ScriptObject.Name + " (Batched)";
+                        GameObject go = new GameObject();
+
+                        go.name = mapObject.ScriptObject.Name + " (Batched) " + hash;
                         go.layer = PhysicsLayer.MapObjectEntities;
-                        go.transform.parent = batchRoot.transform;
+
+                        go.transform.SetParent(combinedRoot.transform);
+
                         roots.Add(hash, go);
                         shared.Add(hash, new List<GameObject>());
                     }
+
                     shared[hash].Add(filter.gameObject);
                     oldParents.Add(filter.gameObject, filter.transform.parent);
+
                     filter.transform.SetParent(roots[hash].transform);
                 }
+
+                // Move original object under organized root
+                mapObject.GameObject.transform.SetParent(originalRoot.transform);
             }
+
             foreach (string hash in roots.Keys)
                 CombineMeshes(roots[hash]);
+
             foreach (string hash in shared.Keys)
             {
                 foreach (GameObject go in shared[hash])
@@ -538,24 +557,49 @@ namespace Map
         void CombineMeshes(GameObject obj)
         {
             MeshFilter[] meshFilters = obj.GetComponentsInChildren<MeshFilter>();
-            CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+
             if (meshFilters.Length == 0)
                 return;
-            bool rendererEnabled = meshFilters[0].GetComponent<Renderer>().enabled;
-            for (int i = 0; i < meshFilters.Length; i++)
+
+            List<MeshFilter> validFilters = new List<MeshFilter>();
+
+            foreach (var filter in meshFilters)
             {
-                combine[i].mesh = meshFilters[i].sharedMesh;
-                combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
-                meshFilters[i].GetComponent<Renderer>().enabled = false;
+                var renderer = filter.GetComponent<Renderer>();
+
+                if (renderer != null)
+                    validFilters.Add(filter);
             }
-            var meshFilter = obj.AddComponent<MeshFilter>();
-            obj.AddComponent<MeshRenderer>();
+
+            if (validFilters.Count == 0)
+                return;
+
+            CombineInstance[] combine = new CombineInstance[validFilters.Count];
+
+            bool rendererEnabled = validFilters[0].GetComponent<Renderer>().enabled;
+
+            for (int i = 0; i < validFilters.Count; i++)
+            {
+                combine[i].mesh = validFilters[i].sharedMesh;
+                combine[i].transform = validFilters[i].transform.localToWorldMatrix;
+
+                validFilters[i].GetComponent<Renderer>().enabled = false;
+            }
+
+            MeshFilter meshFilter = obj.AddComponent<MeshFilter>();
+            MeshRenderer meshRenderer = obj.AddComponent<MeshRenderer>();
+
             meshFilter.mesh = new Mesh();
+            meshFilter.mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+
             meshFilter.mesh.CombineMeshes(combine, true, true);
+
+            meshRenderer.staticShadowCaster = true;
+
             if (rendererEnabled)
-                obj.GetComponent<Renderer>().material = meshFilters[0].GetComponent<Renderer>().sharedMaterial;
+                meshRenderer.material = validFilters[0].GetComponent<Renderer>().sharedMaterial;
             else
-                obj.GetComponent<Renderer>().enabled = false;
+                meshRenderer.enabled = false;
         }
 
         public static void RegisterTag(string tag, MapObject obj)
@@ -596,16 +640,92 @@ namespace Map
             GameObject go = obj.Asset == "None"
                 ? new GameObject()
                 : LoadPrefabCached(obj.Asset);
-            
+
             if (editor)
             {
                 int colliderCount = SetPhysics(go, MapObjectCollideMode.Physical, MapObjectCollideWith.MapEditor, obj.PhysicsMaterial);
-                if (colliderCount == 0) go.AddComponent<MeshCollider>();
+                // if (colliderCount == 0) go.AddComponent<MeshCollider>();
+                if (colliderCount == 0)
+                {
+                    // Try to add appropriate collider based on what components exist
+                    if (!TryAddEditorCollider(go))
+                    {
+                        // Fallback: add a small sphere collider as a selection handle
+                        var sphere = go.AddComponent<SphereCollider>();
+                        sphere.radius = 0.5f;
+                    }
+                }
             }
             else
                 SetPhysics(go, obj.CollideMode, obj.CollideWith, obj.PhysicsMaterial);
             SetMaterial(go, obj.Asset, obj.Material, obj.Visible, editor);
             return go;
+        }
+
+        private static bool TryAddEditorCollider(GameObject go)
+        {
+            // Check for mesh filters that might have failed to add collider
+            var meshFilters = go.GetComponentsInChildren<MeshFilter>();
+            foreach (var filter in meshFilters)
+            {
+                if (filter.sharedMesh != null && filter.sharedMesh.vertexCount > 0)
+                {
+                    var meshCollider = filter.gameObject.AddComponent<MeshCollider>();
+                    meshCollider.sharedMesh = filter.sharedMesh;
+                    return true;
+                }
+            }
+
+            // Check for renderers without mesh filters
+            var renderers = go.GetComponentsInChildren<Renderer>();
+            if (renderers.Length > 0)
+            {
+                // Calculate combined bounds, skipping renderers with invalid bounds
+                bool hasBounds = false;
+                Bounds combinedBounds = default;
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    Bounds b = renderers[i].bounds;
+                    if (b.extents.sqrMagnitude <= 0f || float.IsNaN(b.extents.x) || float.IsInfinity(b.extents.x))
+                        continue;
+                    if (!hasBounds)
+                    {
+                        combinedBounds = b;
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        combinedBounds.Encapsulate(b);
+                    }
+                }
+
+                if (hasBounds)
+                {
+                    var box = go.AddComponent<BoxCollider>();
+                    box.center = go.transform.InverseTransformPoint(combinedBounds.center);
+                    box.size = combinedBounds.size;
+                    return true;
+                }
+            }
+
+            // Check for particle systems
+            var particleSystem = go.GetComponentInChildren<ParticleSystem>();
+            if (particleSystem != null)
+            {
+                var renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
+                if (renderer != null)
+                {
+                    var bounds = renderer.bounds;
+                    var box = go.AddComponent<BoxCollider>();
+                    box.center = go.transform.InverseTransformPoint(bounds.center);
+                    box.size = bounds.size;
+                    return true;
+                }
+            }
+
+            var gizmo = go.AddComponent<EditorGizmoIcon>();
+            gizmo.Setup();
+            return true;
         }
 
         private static void SetTransform(MapObject mapObject)
@@ -673,7 +793,7 @@ namespace Map
                 var assetMats = new List<Material>();
                 foreach (Renderer renderer in renderers)
                 {
-                    assetMats.Add(renderer.material);
+                    assetMats.Add(renderer.sharedMaterial);
                 }
                 _assetMaterialCache.Add(asset, assetMats);
             }
@@ -684,13 +804,23 @@ namespace Map
                 {
                     var assetMats = _assetMaterialCache[asset];
                     var defaultMats = new List<Material>();
+                    var createdMats = new Dictionary<Material, Material>();
                     foreach (var assetMat in assetMats)
                     {
-                        var mat = new Material(assetMat);
-                        if (material.Shader != MapObjectShader.DefaultNoTint)
-                            mat.color = material.Color.ToColor();
-                        if (material.Shader == MapObjectShader.DefaultTiled)
-                            SetDefaultTiling(asset, mat, ((MapScriptDefaultTiledMaterial)material).Tiling);
+                        if (assetMat == null)
+                        {
+                            defaultMats.Add(null);
+                            continue;
+                        }
+                        if (!createdMats.TryGetValue(assetMat, out var mat))
+                        {
+                            mat = new Material(assetMat);
+                            if (material.Shader != MapObjectShader.DefaultNoTint)
+                                mat.color = material.Color.ToColor();
+                            if (material.Shader == MapObjectShader.DefaultTiled)
+                                SetDefaultTiling(asset, mat, ((MapScriptDefaultTiledMaterial)material).Tiling);
+                            createdMats.Add(assetMat, mat);
+                        }
                         defaultMats.Add(mat);
                     }
                     _defaultMaterialCache.Add(materialHash, defaultMats);
@@ -698,7 +828,8 @@ namespace Map
                 var mats = _defaultMaterialCache[materialHash];
                 for (int i = 0; i < renderers.Count; i++)
                 {
-                    renderers[i].material = mats[i];
+                    if (i < mats.Count && mats[i] != null)
+                        renderers[i].sharedMaterial = mats[i];
                     renderers[i].enabled = visible;
                 }
             }
@@ -756,7 +887,7 @@ namespace Map
                 foreach (Renderer renderer in renderers)
                 {
                     if (mat != null)
-                        renderer.material = mat;
+                        renderer.sharedMaterial = mat;
                     renderer.enabled = visible;
                 }
             }
@@ -853,7 +984,7 @@ namespace Map
         }
     }
 
-    static class MapObjectShader
+    public static class MapObjectShader
     {
         public static string Default = "Default";
         public static string DefaultNoTint = "DefaultNoTint";
@@ -873,14 +1004,14 @@ namespace Map
         }
     }
 
-    static class MapObjectCollideMode
+    public static class MapObjectCollideMode
     {
         public static string Physical = "Physical";
         public static string Region = "Region";
         public static string None = "None";
     }
 
-    static class MapObjectCollideWith
+    public static class MapObjectCollideWith
     {
         public static string All = "All";
         public static string MapObjects = "MapObjects";
@@ -893,7 +1024,7 @@ namespace Map
         public static string MapEditor = "MapEditor";
     }
 
-    static class MapObjectPhysicsMaterial
+    public static class MapObjectPhysicsMaterial
     {
         public static string Default = "Default";
         public static string Ice = "IceMaterial";

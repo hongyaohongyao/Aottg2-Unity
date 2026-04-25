@@ -1,5 +1,5 @@
 {
-	"EyeCount": 48,
+	"EyeCount": 68,
 	"FaceCount": 14,
 	"GlassCount": 10,
 	"BackCount": 8,
@@ -242,6 +242,57 @@
 			},
 			{
 				"Texture": "hair_eld"
+			},
+			{
+				"Texture": "hair_shortanime"
+			},
+			{
+				"Texture": "hair_sides"
+			},
+			{
+				"Texture": "hair_s4eren"
+			},
+			{
+				"Texture": "hair_newlevi"
+			},
+			{
+				"Texture": "hair_neweren"
+			},
+			{
+				"Texture": "hair_newarmin"
+			},
+			{
+				"Texture": "hair_messymedium"
+			},
+			{
+				"Texture": "hair_messyanimeshort"
+			},
+			{
+				"Texture": "hair_emo"
+			},
+			{
+				"Texture": "hair_emolong"
+			},
+			{
+				"Texture": "hair_emoflip"
+			},
+			{
+				"Texture": "hair_afro"
+			},
+			{
+				"Texture": "hair_M18"
+			},
+			{
+				"Texture": "hair_M19"
+			},
+			{
+				"Texture": "hair_M20"
+			},
+			{
+				"Texture": "hair_M21"
+			},
+			{
+				"Texture": "hair_M22"
 			}
 		],
 		"Female": [
@@ -286,6 +337,66 @@
 			},
 			{
 				"Texture": "hair_historia"
+			},
+			{
+				"Texture": "hair_F13"
+			},
+			{
+				"Texture": "hair_F14"
+			},
+			{
+				"Texture": "hair_F15"
+			},
+			{
+				"Texture": "hair_F16"
+			},
+			{
+				"Texture": "hair_F17"
+			},
+			{
+				"Texture": "hair_F18"
+			},
+			{
+				"Texture": "hair_F19"
+			},
+			{
+				"Texture": "hair_longanime"
+			},
+			{
+				"Texture": "hair_longbangs"
+			},
+			{
+				"Texture": "hair_longlacy"
+			},
+			{
+				"Texture": "hair_longhimecut"
+			},
+			{
+				"Texture": "hair_longhimecutvariant"
+			},
+			{
+				"Texture": "hair_longcurly"
+			},
+			{
+				"Texture": "hair_longcurly2"
+			},
+			{
+				"Texture": "hair_pixie"
+			},
+			{
+				"Texture": "hair_2b"
+			},
+			{
+				"Texture": "hair_bobcut2"
+			},
+			{
+				"Texture": "hair_bobcut3"
+			},
+			{
+				"Texture": "hair_lacymedium"
+			},
+			{
+				"Texture": "hair_shortlacy"
 			}
 		]
 	},

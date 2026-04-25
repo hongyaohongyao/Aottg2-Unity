@@ -18,6 +18,7 @@ namespace UI
     class MapEditorMenu: BaseMenu
     {
         public MapEditorInspectPanel InspectPanel;
+        public MapEditorBrushPanel BrushPanel;
         public MapEditorHierarchyPanel HierarchyPanel;
         public MapEditorTopPanel _topPanel;
         public MapEditorAddObjectPopup AddObjectPopup;
@@ -35,6 +36,9 @@ namespace UI
         public Image DragImage;
         public bool IsMouseUI;
         public bool IsInputFocused;
+        // One-shot callback used by the texture popup when opened from somewhere
+        // other than the inspect panel (e.g. the brush panel).
+        public System.Action<string> TexturePopupTarget;
 
         public override void Setup()
         {
@@ -105,10 +109,17 @@ namespace UI
 
         public void ShowInspector(MapObject obj)
         {
+            ShowInspector(new List<MapObject> { obj });
+        }
+
+        public void ShowInspector(List<MapObject> objs)
+        {
             HideInspector();
+            if (objs == null || objs.Count == 0)
+                return;
             InspectPanel = ElementFactory.CreateHeadedPanel<MapEditorInspectPanel>(transform);
             ElementFactory.SetAnchor(InspectPanel.gameObject, TextAnchor.UpperRight, TextAnchor.UpperRight, new Vector2(-5f, -65f));
-            InspectPanel.Show(obj);
+            InspectPanel.Show(objs);
         }
 
         public void HideInspector()
@@ -117,10 +128,42 @@ namespace UI
                 Destroy(InspectPanel.gameObject);
         }
 
+        public void ShowBrushPanel()
+        {
+            HideInspector();
+            if (BrushPanel == null)
+            {
+                BrushPanel = ElementFactory.CreateHeadedPanel<MapEditorBrushPanel>(transform);
+                ElementFactory.SetAnchor(BrushPanel.gameObject, TextAnchor.UpperRight, TextAnchor.UpperRight, new Vector2(-5f, -65f));
+            }
+            BrushPanel.Show();
+        }
+
+        public void HideBrushPanel()
+        {
+            if (BrushPanel != null)
+            {
+                Destroy(BrushPanel.gameObject);
+                BrushPanel = null;
+            }
+        }
+
+        public void SyncBrushPanel()
+        {
+            if (BrushPanel != null)
+                BrushPanel.Rebuild();
+        }
+
+        public void SyncBrushPanelValues()
+        {
+            if (BrushPanel != null)
+                BrushPanel.SyncValues();
+        }
+
         public void SyncInspector()
         {
             if (InspectPanel != null)
-                ShowInspector(InspectPanel._mapObject);
+                ShowInspector(InspectPanel._mapObjects);
         }
 
         public void ShowHierarchyPanel()
@@ -153,6 +196,8 @@ namespace UI
             float max = Screen.width;
             if (InspectPanel != null && InspectPanel.gameObject.activeSelf)
                 max -= (InspectPanel.GetPhysicalWidth() + 10f);
+            if (BrushPanel != null && BrushPanel.gameObject.activeSelf)
+                max -= (BrushPanel.GetPhysicalWidth() + 10f);
             return max;
         }
 

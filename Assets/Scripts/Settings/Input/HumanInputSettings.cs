@@ -18,6 +18,7 @@
         public KeybindSetting HorseWalk = new KeybindSetting(new string[] { "LeftShift", "None" });
         public KeybindSetting HorseJump = new KeybindSetting(new string[] { "Space", "None" });
         public KeybindSetting NapeLock = new KeybindSetting(new string[] { "None", "None" });
+        public KeybindSetting Walk = new KeybindSetting(new string[] { "LeftAlt", "None" });
         public BoolSetting DashDoubleTap = new BoolSetting(true);
         public BoolSetting WallSlideDash = new BoolSetting(true);
         public IntSetting WallSlideAttach = new IntSetting((int)WallSlideAttachMethod.Auto);

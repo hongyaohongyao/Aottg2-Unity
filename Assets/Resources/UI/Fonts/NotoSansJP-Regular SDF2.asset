@@ -169,8 +169,8 @@ MonoBehaviour:
     italicTypeface: {fileID: 0}
   - regularTypeface: {fileID: 0}
     italicTypeface: {fileID: 0}
-  - regularTypeface: {fileID: 0}
-    italicTypeface: {fileID: 0}
+  - regularTypeface: {fileID: 11400000, guid: 3a906a888ae0344869282a46e33f7bc2, type: 2}
+    italicTypeface: {fileID: 11400000, guid: f158ae005c84642f49fe52587a0d9c08, type: 2}
   - regularTypeface: {fileID: 0}
     italicTypeface: {fileID: 0}
   - regularTypeface: {fileID: 0}

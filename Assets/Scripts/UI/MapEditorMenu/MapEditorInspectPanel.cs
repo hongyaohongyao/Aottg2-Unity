@@ -6,6 +6,7 @@ using MapEditor;
 using Settings;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using Utility;
@@ -25,6 +26,11 @@ namespace UI
         private MapEditorGameManager _gameManager;
         private MapEditorMenu _menu;
         public MapObject _mapObject;
+        public List<MapObject> _mapObjects = new List<MapObject>();
+        private HashSet<string> _mixedFields = new HashSet<string>();
+        private Dictionary<string, string> _syncedSerialized = new Dictionary<string, string>();
+        private List<GameObject> _mixedNumericElements = new List<GameObject>();
+        private const string MixedStringValue = "--";
         private IntSetting _parent = new IntSetting();
         private StringSetting _name = new StringSetting();
         private BoolSetting _active = new BoolSetting();
@@ -84,16 +90,31 @@ namespace UI
 
         public void Show(MapObject mapObject)
         {
+            Show(new List<MapObject> { mapObject });
+        }
+
+        public void Show(List<MapObject> mapObjects)
+        {
             base.Show();
-            _mapObject = mapObject;
+            _mapObjects = new List<MapObject>(mapObjects);
+            _mapObject = _mapObjects[0];
+            _mixedFields.Clear();
+            _mixedNumericElements.Clear();
             SyncSettings();
             ElementStyle style = new ElementStyle(fontSize: 18, titleWidth: 80f, spacing: 10f, themePanel: ThemePanel);
-            var topGroup = ElementFactory.CreateHorizontalGroup(SinglePanel, 20f, TextAnchor.MiddleLeft);
-            ElementFactory.CreateIconButton(topGroup.transform, style, "Icons/Navigation/CopyIcon", onClick: () => CopyAssetCSV());
+            if (_mapObjects.Count == 1)
+            {
+                var topGroup = ElementFactory.CreateHorizontalGroup(SinglePanel, 20f, TextAnchor.MiddleLeft);
+                ElementFactory.CreateIconButton(topGroup.transform, style, "Icons/Navigation/CopyIcon", onClick: () => CopyAssetCSV());
 
-            var topGroupVert = ElementFactory.CreateVerticalGroup(topGroup.transform, 10f, TextAnchor.UpperLeft);
-            var idLabel = ElementFactory.CreateTextButton(topGroupVert.transform, style, "Id: " + _mapObject.ScriptObject.Id.ToString(), onClick: () => CopyID());
-            var assetLabel = ElementFactory.CreateTextButton(topGroupVert.transform, style, "Asset: " + _mapObject.ScriptObject.Asset, onClick: () => CopyAssetCSV());  // This will eventually allow swapping asset.
+                var topGroupVert = ElementFactory.CreateVerticalGroup(topGroup.transform, 10f, TextAnchor.UpperLeft);
+                var idLabel = ElementFactory.CreateTextButton(topGroupVert.transform, style, "Id: " + _mapObject.ScriptObject.Id.ToString(), onClick: () => CopyID());
+                var assetLabel = ElementFactory.CreateTextButton(topGroupVert.transform, style, "Asset: " + _mapObject.ScriptObject.Asset, onClick: () => CopyAssetCSV());  // This will eventually allow swapping asset.
+            }
+            else
+            {
+                ElementFactory.CreateDefaultLabel(SinglePanel, style, "Selected " + _mapObjects.Count.ToString() + " objects", alignment: TextAnchor.MiddleLeft);
+            }
 
             // var label = ElementFactory.CreateDefaultLabel(topGroup.transform, style, "Id: " + _mapObject.ScriptObject.Id.ToString() + "\n" + "Asset: " + _mapObject.ScriptObject.Asset, alignment: TextAnchor.MiddleLeft);
             // label.GetComponent<Text>().horizontalOverflow = HorizontalWrapMode.Wrap;    // Doesn't stop the object from consuming icon space.
@@ -125,27 +146,21 @@ namespace UI
             ElementFactory.CreateInputSetting(group, style, _scaleZ, "Z", elementWidth: inputWidth, elementHeight: 35f, onEndEdit: () => OnChange());
             CreateHorizontalDivider(SinglePanel);
             style = new ElementStyle(fontSize: 18, titleWidth: 160f, spacing: 20f, themePanel: ThemePanel);
-            if (!HasNonConvexMeshCollider(_mapObject))
-            {
-                ElementFactory.CreateDropdownSetting(SinglePanel, style, _collideMode, "Collide Mode",
-                new string[] { MapObjectCollideMode.Physical, MapObjectCollideMode.Region, MapObjectCollideMode.None },
+            string[] collideModeOptions = !_mapObjects.Any(HasNonConvexMeshCollider)
+                ? new string[] { MapObjectCollideMode.Physical, MapObjectCollideMode.Region, MapObjectCollideMode.None }
+                : new string[] { MapObjectCollideMode.Physical, MapObjectCollideMode.None };
+            ElementFactory.CreateDropdownSetting(SinglePanel, style, _collideMode, "Collide Mode",
+                WithMixedOption(collideModeOptions, "CollideMode", _collideMode),
                 elementHeight: 30f, onDropdownOptionSelect: () => OnChange());
-            }
-            else
-            {
-                ElementFactory.CreateDropdownSetting(SinglePanel, style, _collideMode, "Collide Mode",
-                new string[] { MapObjectCollideMode.Physical, MapObjectCollideMode.None },
-                elementHeight: 30f, onDropdownOptionSelect: () => OnChange());
-            }
             ElementFactory.CreateDropdownSetting(SinglePanel, style, _collideWith, "Collide With",
-                new string[] { MapObjectCollideWith.Entities, MapObjectCollideWith.Characters, MapObjectCollideWith.Titans, MapObjectCollideWith.Humans, MapObjectCollideWith.Projectiles, MapObjectCollideWith.Hitboxes,
-                    MapObjectCollideWith.MapObjects, MapObjectCollideWith.All}, elementHeight: 30f, onDropdownOptionSelect: () => OnChange());
+                WithMixedOption(new string[] { MapObjectCollideWith.Entities, MapObjectCollideWith.Characters, MapObjectCollideWith.Titans, MapObjectCollideWith.Humans, MapObjectCollideWith.Projectiles, MapObjectCollideWith.Hitboxes,
+                    MapObjectCollideWith.MapObjects, MapObjectCollideWith.All }, "CollideWith", _collideWith), elementHeight: 30f, onDropdownOptionSelect: () => OnChange());
             ElementFactory.CreateDropdownSetting(SinglePanel, style, _physicsMaterial, "Physics Material",
-                            new string[] { MapObjectPhysicsMaterial.Default, MapObjectPhysicsMaterial.Ice }, elementHeight: 30f, onDropdownOptionSelect: () => OnChange());
+                WithMixedOption(new string[] { MapObjectPhysicsMaterial.Default, MapObjectPhysicsMaterial.Ice }, "PhysicsMaterial", _physicsMaterial), elementHeight: 30f, onDropdownOptionSelect: () => OnChange());
             CreateHorizontalDivider(SinglePanel);
             ElementFactory.CreateToggleSetting(SinglePanel, style, _visible, "Visible", elementWidth: 25f, elementHeight: 25f, onValueChanged: () => OnChange());
             ElementFactory.CreateDropdownSetting(SinglePanel, style, _shader, "Shader",
-               new string[] { MapObjectShader.Default, MapObjectShader.Basic, MapObjectShader.Transparent, MapObjectShader.Reflective, MapObjectShader.DefaultNoTint, MapObjectShader.DefaultTiled },
+               WithMixedOption(new string[] { MapObjectShader.Default, MapObjectShader.Basic, MapObjectShader.Transparent, MapObjectShader.Reflective, MapObjectShader.DefaultNoTint, MapObjectShader.DefaultTiled }, "Shader", _shader),
                elementHeight: 30f, onDropdownOptionSelect: () => OnChange());
             if (_shader.Value != MapObjectShader.DefaultNoTint)
             {
@@ -181,8 +196,10 @@ namespace UI
             }
             CreateHorizontalDivider(SinglePanel);
 
-            for (int i = 0; i < _components.Count; i++)
+            if (_mapObjects.Count == 1)
             {
+                for (int i = 0; i < _components.Count; i++)
+                {
                 ElementFactory.CreateDefaultLabel(SinglePanel, style, _componentNames[i]);
                 var settings = _components[i];
                 string description = CustomLogicManager.GetModeDescription(settings);
@@ -233,6 +250,9 @@ namespace UI
                 CreateHorizontalDivider(SinglePanel);
             }
             ElementFactory.CreateDefaultButton(SinglePanel, style, "Add Component", onClick: () => OnButtonClick("AddComponent"));
+            }
+            ApplyMixedIndicators();
+            CaptureSyncedValues();
             SinglePanel.gameObject.SetActive(false);
             StartCoroutine(WaitAndEnablePanel());
         }
@@ -278,10 +298,29 @@ namespace UI
             OnChange();
         }
 
+        private string SanitizeName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return string.Empty;
+            
+            // Remove characters used in MapScript CSV parsing
+            char[] invalidChars = new char[] { ',', ';', '/', '\\', '\n', '\r', '|', ':' };
+            foreach (char c in invalidChars)
+            {
+                name = name.Replace(c.ToString(), string.Empty);
+            }
+            
+            // Limit to 255 characters
+            if (name.Length > 255)
+                name = name.Substring(0, 255);
+            
+            return name.Trim();
+        }
+
         public void SyncSettings()
         {
             var script = (MapScriptSceneObject)_mapObject.ScriptObject;
-            _name.Value = script.Name;
+            _name.Value = SanitizeName(script.Name);
             _active.Value = script.Active;
             _static.Value = script.Static;
             _networked.Value = script.Networked;
@@ -304,6 +343,12 @@ namespace UI
             _physicsMaterial.Value = script.PhysicsMaterial;
             _shader.Value = script.Material.Shader;
             _color.Value = script.Material.Color;
+            _reflectColor.Value = new Color255();
+            _texture.Value = "Misc/None";
+            _tilingX.Value = 1f;
+            _tilingY.Value = 1f;
+            _offsetX.Value = 0f;
+            _offsetY.Value = 0f;
             if (script.Material is MapScriptLegacyMaterial)
             {
                 var material = (MapScriptLegacyMaterial)script.Material;
@@ -327,14 +372,188 @@ namespace UI
                 if (script.Material is MapScriptReflectiveMaterial)
                     _reflectColor.Value = ((MapScriptReflectiveMaterial)script.Material).ReflectColor;
             }
+
+            // Detect mixed values across all selected objects
+            for (int i = 1; i < _mapObjects.Count; i++)
+            {
+                var s = (MapScriptSceneObject)_mapObjects[i].ScriptObject;
+                if (SanitizeName(s.Name) != _name.Value) _mixedFields.Add("Name");
+                if (s.Active != _active.Value) _mixedFields.Add("Active");
+                if (s.Static != _static.Value) _mixedFields.Add("Static");
+                if (s.Networked != _networked.Value) _mixedFields.Add("Networked");
+                if (s.Visible != _visible.Value) _mixedFields.Add("Visible");
+                if (s.Parent != _parent.Value) _mixedFields.Add("Parent");
+                var p = s.GetPosition();
+                if (p.x != _positionX.Value) _mixedFields.Add("PositionX");
+                if (p.y != _positionY.Value) _mixedFields.Add("PositionY");
+                if (p.z != _positionZ.Value) _mixedFields.Add("PositionZ");
+                var r = s.GetRotation();
+                if (r.x != _rotationX.Value) _mixedFields.Add("RotationX");
+                if (r.y != _rotationY.Value) _mixedFields.Add("RotationY");
+                if (r.z != _rotationZ.Value) _mixedFields.Add("RotationZ");
+                var sc = s.GetScale();
+                if (sc.x != _scaleX.Value) _mixedFields.Add("ScaleX");
+                if (sc.y != _scaleY.Value) _mixedFields.Add("ScaleY");
+                if (sc.z != _scaleZ.Value) _mixedFields.Add("ScaleZ");
+                if (s.CollideMode != _collideMode.Value) _mixedFields.Add("CollideMode");
+                if (s.CollideWith != _collideWith.Value) _mixedFields.Add("CollideWith");
+                if (s.PhysicsMaterial != _physicsMaterial.Value) _mixedFields.Add("PhysicsMaterial");
+                if (s.Material.Shader != _shader.Value) _mixedFields.Add("Shader");
+                if (!ColorEquals(s.Material.Color, _color.Value)) _mixedFields.Add("Color");
+            }
+
+            // Apply "--" sentinel for mixed string fields
+            if (_mixedFields.Contains("Name")) _name.Value = MixedStringValue;
+            if (_mixedFields.Contains("Texture")) _texture.Value = MixedStringValue;
+
             _components = new List<Dictionary<string, BaseSetting>>();
             _componentNames = new List<string>();
-            foreach (var component in ((MapScriptSceneObject)_mapObject.ScriptObject).Components)
+            if (_mapObjects.Count == 1)
             {
-                _componentNames.Add(component.ComponentName);
-                _components.Add(_gameManager.LogicEvaluator.GetComponentSettings(component.ComponentName, component.Parameters));
+                foreach (var component in ((MapScriptSceneObject)_mapObject.ScriptObject).Components)
+                {
+                    _componentNames.Add(component.ComponentName);
+                    _components.Add(_gameManager.LogicEvaluator.GetComponentSettings(component.ComponentName, component.Parameters));
+                }
             }
             SyncSettingElements();
+        }
+
+        private static bool ColorEquals(Color255 a, Color255 b)
+        {
+            return a.R == b.R && a.G == b.G && a.B == b.B && a.A == b.A;
+        }
+
+        private string[] WithMixedOption(string[] options, string fieldKey, StringSetting setting)
+        {
+            if (!_mixedFields.Contains(fieldKey))
+                return options;
+            setting.Value = MixedStringValue;
+            var list = new List<string>(options);
+            list.Insert(0, MixedStringValue);
+            return list.ToArray();
+        }
+
+        private void CaptureSyncedValues()
+        {
+            _syncedSerialized.Clear();
+            _syncedSerialized["Name"] = _name.Value;
+            _syncedSerialized["Active"] = _active.Value.ToString();
+            _syncedSerialized["Static"] = _static.Value.ToString();
+            _syncedSerialized["Networked"] = _networked.Value.ToString();
+            _syncedSerialized["Visible"] = _visible.Value.ToString();
+            _syncedSerialized["Parent"] = _parent.Value.ToString();
+            _syncedSerialized["PositionX"] = _positionX.Value.ToString("R");
+            _syncedSerialized["PositionY"] = _positionY.Value.ToString("R");
+            _syncedSerialized["PositionZ"] = _positionZ.Value.ToString("R");
+            _syncedSerialized["RotationX"] = _rotationX.Value.ToString("R");
+            _syncedSerialized["RotationY"] = _rotationY.Value.ToString("R");
+            _syncedSerialized["RotationZ"] = _rotationZ.Value.ToString("R");
+            _syncedSerialized["ScaleX"] = _scaleX.Value.ToString("R");
+            _syncedSerialized["ScaleY"] = _scaleY.Value.ToString("R");
+            _syncedSerialized["ScaleZ"] = _scaleZ.Value.ToString("R");
+            _syncedSerialized["CollideMode"] = _collideMode.Value;
+            _syncedSerialized["CollideWith"] = _collideWith.Value;
+            _syncedSerialized["PhysicsMaterial"] = _physicsMaterial.Value;
+            _syncedSerialized["Shader"] = _shader.Value;
+            _syncedSerialized["Color"] = SerializeSetting(_color);
+            _syncedSerialized["ReflectColor"] = SerializeSetting(_reflectColor);
+            _syncedSerialized["Texture"] = _texture.Value;
+            _syncedSerialized["TilingX"] = _tilingX.Value.ToString("R");
+            _syncedSerialized["TilingY"] = _tilingY.Value.ToString("R");
+            _syncedSerialized["OffsetX"] = _offsetX.Value.ToString("R");
+            _syncedSerialized["OffsetY"] = _offsetY.Value.ToString("R");
+        }
+
+        private bool IsModified(string key, string current)
+        {
+            return _syncedSerialized.TryGetValue(key, out var old) && old != current;
+        }
+
+        private void ApplyMixedIndicators()
+        {
+            var settingToKey = new Dictionary<BaseSetting, string>
+            {
+                { _positionX, "PositionX" },
+                { _positionY, "PositionY" },
+                { _positionZ, "PositionZ" },
+                { _rotationX, "RotationX" },
+                { _rotationY, "RotationY" },
+                { _rotationZ, "RotationZ" },
+                { _scaleX, "ScaleX" },
+                { _scaleY, "ScaleY" },
+                { _scaleZ, "ScaleZ" },
+                { _tilingX, "TilingX" },
+                { _tilingY, "TilingY" },
+                { _offsetX, "OffsetX" },
+                { _offsetY, "OffsetY" },
+                { _parent, "Parent" },
+                { _active, "Active" },
+                { _static, "Static" },
+                { _networked, "Networked" },
+                { _visible, "Visible" },
+            };
+            var settingField = typeof(BaseSettingElement).GetField("_setting",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (settingField == null)
+                return;
+            foreach (var input in SinglePanel.GetComponentsInChildren<InputSettingElement>(true))
+            {
+                var setting = settingField.GetValue(input) as BaseSetting;
+                if (setting == null)
+                    continue;
+                if (settingToKey.TryGetValue(setting, out string key) && _mixedFields.Contains(key))
+                {
+                    var field = input.transform.Find("InputField")?.GetComponent<InputField>();
+                    if (field != null)
+                        field.text = MixedStringValue;
+                }
+            }
+            foreach (var toggleElement in SinglePanel.GetComponentsInChildren<ToggleSettingElement>(true))
+            {
+                var setting = settingField.GetValue(toggleElement) as BaseSetting;
+                if (setting == null)
+                    continue;
+                if (settingToKey.TryGetValue(setting, out string key) && _mixedFields.Contains(key))
+                {
+                    var toggle = toggleElement.transform.Find("Toggle")?.GetComponent<Toggle>();
+                    if (toggle == null)
+                        continue;
+                    var background = toggle.transform.Find("Background");
+                    var checkmark = background != null ? background.Find("Checkmark")?.GetComponent<Image>() : null;
+                    if (checkmark == null)
+                        continue;
+                    // Show a "mixed" indicator: hide the checkmark and overlay a "--" label.
+                    toggle.SetIsOnWithoutNotify(false);
+                    checkmark.enabled = false;
+                    var labelGO = new GameObject("MixedLabel", typeof(RectTransform), typeof(Text));
+                    labelGO.transform.SetParent(background, false);
+                    var labelRect = (RectTransform)labelGO.transform;
+                    labelRect.anchorMin = Vector2.zero;
+                    labelRect.anchorMax = Vector2.one;
+                    labelRect.offsetMin = Vector2.zero;
+                    labelRect.offsetMax = Vector2.zero;
+                    var labelText = labelGO.GetComponent<Text>();
+                    labelText.text = MixedStringValue;
+                    labelText.alignment = TextAnchor.MiddleCenter;
+                    labelText.color = checkmark.color;
+                    labelText.raycastTarget = false;
+                    labelText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+                    labelText.fontSize = Mathf.Max(10, (int)(background.GetComponent<RectTransform>().rect.height * 0.9f));
+                    labelText.fontStyle = FontStyle.Bold;
+                    string capturedKey = key;
+                    // Remove the overlay once the user toggles and force the field to be treated
+                    // as modified so the new value is applied to all objects.
+                    toggle.onValueChanged.AddListener((bool _) =>
+                    {
+                        if (labelGO != null)
+                            Destroy(labelGO);
+                        checkmark.enabled = true;
+                        _syncedSerialized.Remove(capturedKey);
+                        _mixedFields.Remove(capturedKey);
+                    });
+                }
+            }
         }
 
         public void OnSelectTexture(string texture)
@@ -346,128 +565,230 @@ namespace UI
         public void OnChange()
         {
             bool needRefresh = false;
-            var script = (MapScriptSceneObject)_mapObject.ScriptObject;
-            bool nameChange = script.Name != _name.Value;
-            script.Name = _name.Value;
-            script.Active = _active.Value;
-            script.Static = _static.Value;
-            script.Networked = _networked.Value;
-            script.Visible = _visible.Value;
-            script.Parent = _parent.Value;
-            if (script.Parent > 0)
+            bool nameChange = false;
+
+            // Determine which fields were modified by comparing current values to the synced snapshot.
+            bool modName = IsModified("Name", _name.Value);
+            bool modActive = IsModified("Active", _active.Value.ToString());
+            bool modStatic = IsModified("Static", _static.Value.ToString());
+            bool modNetworked = IsModified("Networked", _networked.Value.ToString());
+            bool modVisible = IsModified("Visible", _visible.Value.ToString());
+            bool modParent = IsModified("Parent", _parent.Value.ToString());
+            bool modPosX = IsModified("PositionX", _positionX.Value.ToString("R"));
+            bool modPosY = IsModified("PositionY", _positionY.Value.ToString("R"));
+            bool modPosZ = IsModified("PositionZ", _positionZ.Value.ToString("R"));
+            bool modRotX = IsModified("RotationX", _rotationX.Value.ToString("R"));
+            bool modRotY = IsModified("RotationY", _rotationY.Value.ToString("R"));
+            bool modRotZ = IsModified("RotationZ", _rotationZ.Value.ToString("R"));
+            bool modScaleX = IsModified("ScaleX", _scaleX.Value.ToString("R"));
+            bool modScaleY = IsModified("ScaleY", _scaleY.Value.ToString("R"));
+            bool modScaleZ = IsModified("ScaleZ", _scaleZ.Value.ToString("R"));
+            bool modCollideMode = IsModified("CollideMode", _collideMode.Value);
+            bool modCollideWith = IsModified("CollideWith", _collideWith.Value);
+            bool modPhysicsMaterial = IsModified("PhysicsMaterial", _physicsMaterial.Value);
+            bool modShader = IsModified("Shader", _shader.Value);
+            bool modColor = IsModified("Color", SerializeSetting(_color));
+            bool modReflectColor = IsModified("ReflectColor", SerializeSetting(_reflectColor));
+            bool modTexture = IsModified("Texture", _texture.Value);
+            bool modTilingX = IsModified("TilingX", _tilingX.Value.ToString("R"));
+            bool modTilingY = IsModified("TilingY", _tilingY.Value.ToString("R"));
+            bool modOffsetX = IsModified("OffsetX", _offsetX.Value.ToString("R"));
+            bool modOffsetY = IsModified("OffsetY", _offsetY.Value.ToString("R"));
+
+            // Guard against users leaving "--" in mixed string fields
+            if (modName && _name.Value == MixedStringValue) modName = false;
+            if (modTexture && _texture.Value == MixedStringValue) modTexture = false;
+
+            List<MapObject> positionObjects = new List<MapObject>();
+            List<MapObject> rotationObjects = new List<MapObject>();
+            List<MapObject> scaleObjects = new List<MapObject>();
+
+            foreach (var mapObject in _mapObjects)
             {
-                if (!MapLoader.IdToMapObject.ContainsKey(script.Parent) || script.Parent == script.Id || MapLoader.IdToMapObject[script.Parent].Parent == script.Id)
+                var script = (MapScriptSceneObject)mapObject.ScriptObject;
+                if (modName)
                 {
-                    script.Parent = 0;
-                    _parent.Value = 0;
+                    if (script.Name != _name.Value)
+                        nameChange = true;
+                    script.Name = _name.Value;
                 }
-            }
-            var newPosition = new Vector3(_positionX.Value, _positionY.Value, _positionZ.Value);
-            if (script.GetPosition() != newPosition)
-            {
-                _mapObject.GameObject.transform.position = newPosition;
-                _gameManager.NewCommand(new TransformPositionCommand(new List<MapObject>() { _mapObject }), false);
-            }
-            var newRotation = new Vector3(_rotationX.Value, _rotationY.Value, _rotationZ.Value);
-            if (script.GetRotation() != newRotation)
-            {
-                _mapObject.GameObject.transform.rotation = Quaternion.Euler(newRotation);
-                _gameManager.NewCommand(new TransformRotationCommand(new List<MapObject>() { _mapObject }), false);
-            }
-            var newScale = new Vector3(_scaleX.Value, _scaleY.Value, _scaleZ.Value);
-            if (script.GetScale() != newScale)
-            {
-                _mapObject.GameObject.transform.localScale = Util.MultiplyVectors(_mapObject.BaseScale, newScale);
-                _gameManager.NewCommand(new TransformScaleCommand(new List<MapObject>() { _mapObject }), false);
-            }
-            script.CollideMode = _collideMode.Value;
-            script.CollideWith = _collideWith.Value;
-            script.PhysicsMaterial = _physicsMaterial.Value;
-            if (_shader.Value != script.Material.Shader)
-            {
-                if (_shader.Value == MapObjectShader.Default || _shader.Value == MapObjectShader.DefaultNoTint)
+                if (modActive) script.Active = _active.Value;
+                if (modStatic) script.Static = _static.Value;
+                if (modNetworked) script.Networked = _networked.Value;
+                if (modVisible) script.Visible = _visible.Value;
+                if (modParent)
                 {
-                    script.Material = new MapScriptBaseMaterial();
-                    _color.Value = new Color255();
+                    int p = _parent.Value;
+                    if (p > 0 && (!MapLoader.IdToMapObject.ContainsKey(p) || p == script.Id || MapLoader.IdToMapObject[p].Parent == script.Id))
+                        p = 0;
+                    script.Parent = p;
                 }
-                else if (_shader.Value == MapObjectShader.DefaultTiled)
+
+                if (modPosX || modPosY || modPosZ)
                 {
-                    script.Material = new MapScriptDefaultTiledMaterial();
-                    _color.Value = new Color255();
-                }
-                else if (_shader.Value == MapObjectShader.Basic || _shader.Value == MapObjectShader.Transparent)
-                    script.Material = new MapScriptBasicMaterial();
-                else if (_shader.Value == MapObjectShader.Reflective)
-                    script.Material = new MapScriptReflectiveMaterial();
-                else
-                    script.Material = new MapScriptLegacyMaterial();
-                needRefresh = true;
-            }
-            script.Material.Shader = _shader.Value;
-            script.Material.Color = _color.Value;
-            if (script.Material is MapScriptLegacyMaterial)
-            {
-                var material = (MapScriptLegacyMaterial)script.Material;
-                material.Tiling = new Vector2(_tilingX.Value, _tilingY.Value);
-            }
-            else if (script.Material is MapScriptDefaultTiledMaterial)
-            {
-                var material = (MapScriptDefaultTiledMaterial)script.Material;
-                material.Tiling = new Vector2(_tilingX.Value, _tilingY.Value);
-            }
-            else if (typeof(MapScriptBasicMaterial).IsAssignableFrom(script.Material.GetType()))
-            {
-                var material = (MapScriptBasicMaterial)script.Material;
-                if (material.Texture != _texture.Value)
-                    needRefresh = true;
-                material.Texture = _texture.Value;
-                material.Tiling = new Vector2(_tilingX.Value, _tilingY.Value);
-                material.Offset = new Vector2(_offsetX.Value, _offsetY.Value);
-                if (material is MapScriptReflectiveMaterial)
-                    ((MapScriptReflectiveMaterial)material).ReflectColor = _reflectColor.Value;
-            }
-            if (script.Components.Count != _componentNames.Count)
-                needRefresh = true;
-            var oldComponentDict = new Dictionary<string, List<string>>();
-            foreach (var component in script.Components)
-                oldComponentDict.Add(component.ComponentName, component.Parameters);
-            List<MapScriptComponent> newComponents = new List<MapScriptComponent>();
-            for (int i = 0; i < _componentNames.Count; i++)
-            {
-                var newParameters = new List<string>();
-                var settings = _components[i];
-                HashSet<string> parsedParameters = new HashSet<string>();
-                foreach (string key in settings.Keys)
-                {
-                    parsedParameters.Add(key);
-                    if (key == "Description")
-                        continue;
-                    if (key.EndsWith("Tooltip") && settings[key] is StringSetting)
-                        continue;
-                    if (key.EndsWith("Dropbox") && settings[key] is StringSetting)
-                        continue;
-                    newParameters.Add(key + ":" + SerializeSetting(settings[key]));
-                }
-                if (oldComponentDict.ContainsKey(_componentNames[i]))
-                {
-                    var oldParameters = oldComponentDict[_componentNames[i]];
-                    foreach (string oldParameter in oldParameters)
+                    var current = script.GetPosition();
+                    var np = new Vector3(
+                        modPosX ? _positionX.Value : current.x,
+                        modPosY ? _positionY.Value : current.y,
+                        modPosZ ? _positionZ.Value : current.z);
+                    if (np != current)
                     {
-                        string key = oldParameter.Split(':')[0];
-                        if (!parsedParameters.Contains(key))
-                            newParameters.Add(oldParameter);
+                        mapObject.GameObject.transform.position = np;
+                        positionObjects.Add(mapObject);
                     }
                 }
-                var component = new MapScriptComponent();
-                component.ComponentName = _componentNames[i];
-                component.Parameters = newParameters;
-                newComponents.Add(component);
+                if (modRotX || modRotY || modRotZ)
+                {
+                    var current = script.GetRotation();
+                    var nr = new Vector3(
+                        modRotX ? _rotationX.Value : current.x,
+                        modRotY ? _rotationY.Value : current.y,
+                        modRotZ ? _rotationZ.Value : current.z);
+                    if (nr != current)
+                    {
+                        mapObject.GameObject.transform.rotation = Quaternion.Euler(nr);
+                        rotationObjects.Add(mapObject);
+                    }
+                }
+                if (modScaleX || modScaleY || modScaleZ)
+                {
+                    var current = script.GetScale();
+                    var ns = new Vector3(
+                        modScaleX ? _scaleX.Value : current.x,
+                        modScaleY ? _scaleY.Value : current.y,
+                        modScaleZ ? _scaleZ.Value : current.z);
+                    if (ns != current)
+                    {
+                        mapObject.GameObject.transform.localScale = Util.MultiplyVectors(mapObject.BaseScale, ns);
+                        scaleObjects.Add(mapObject);
+                    }
+                }
+
+                if (modCollideMode) script.CollideMode = _collideMode.Value;
+                if (modCollideWith) script.CollideWith = _collideWith.Value;
+                if (modPhysicsMaterial) script.PhysicsMaterial = _physicsMaterial.Value;
+
+                if (modShader && _shader.Value != script.Material.Shader)
+                {
+                    if (_shader.Value == MapObjectShader.Default || _shader.Value == MapObjectShader.DefaultNoTint)
+                    {
+                        script.Material = new MapScriptBaseMaterial();
+                    }
+                    else if (_shader.Value == MapObjectShader.DefaultTiled)
+                    {
+                        script.Material = new MapScriptDefaultTiledMaterial();
+                    }
+                    else if (_shader.Value == MapObjectShader.Basic || _shader.Value == MapObjectShader.Transparent)
+                        script.Material = new MapScriptBasicMaterial();
+                    else if (_shader.Value == MapObjectShader.Reflective)
+                        script.Material = new MapScriptReflectiveMaterial();
+                    else
+                        script.Material = new MapScriptLegacyMaterial();
+                    script.Material.Shader = _shader.Value;
+                    needRefresh = true;
+                }
+                if (modColor) script.Material.Color = _color.Value;
+                if (script.Material is MapScriptLegacyMaterial)
+                {
+                    var material = (MapScriptLegacyMaterial)script.Material;
+                    if (modTilingX || modTilingY)
+                        material.Tiling = new Vector2(
+                            modTilingX ? _tilingX.Value : material.Tiling.x,
+                            modTilingY ? _tilingY.Value : material.Tiling.y);
+                }
+                else if (script.Material is MapScriptDefaultTiledMaterial)
+                {
+                    var material = (MapScriptDefaultTiledMaterial)script.Material;
+                    if (modTilingX || modTilingY)
+                        material.Tiling = new Vector2(
+                            modTilingX ? _tilingX.Value : material.Tiling.x,
+                            modTilingY ? _tilingY.Value : material.Tiling.y);
+                }
+                else if (typeof(MapScriptBasicMaterial).IsAssignableFrom(script.Material.GetType()))
+                {
+                    var material = (MapScriptBasicMaterial)script.Material;
+                    if (modTexture && material.Texture != _texture.Value)
+                    {
+                        needRefresh = true;
+                        material.Texture = _texture.Value;
+                    }
+                    if (modTilingX || modTilingY)
+                        material.Tiling = new Vector2(
+                            modTilingX ? _tilingX.Value : material.Tiling.x,
+                            modTilingY ? _tilingY.Value : material.Tiling.y);
+                    if (modOffsetX || modOffsetY)
+                        material.Offset = new Vector2(
+                            modOffsetX ? _offsetX.Value : material.Offset.x,
+                            modOffsetY ? _offsetY.Value : material.Offset.y);
+                    if (modReflectColor && material is MapScriptReflectiveMaterial)
+                        ((MapScriptReflectiveMaterial)material).ReflectColor = _reflectColor.Value;
+                }
+
+                // Components are only editable in single-select mode
+                if (_mapObjects.Count == 1)
+                {
+                    if (script.Components.Count != _componentNames.Count)
+                        needRefresh = true;
+                    var oldComponentDict = new Dictionary<string, List<string>>();
+                    foreach (var component in script.Components)
+                        oldComponentDict.Add(component.ComponentName, component.Parameters);
+                    List<MapScriptComponent> newComponents = new List<MapScriptComponent>();
+                    for (int i = 0; i < _componentNames.Count; i++)
+                    {
+                        var newParameters = new List<string>();
+                        var settings = _components[i];
+                        HashSet<string> parsedParameters = new HashSet<string>();
+                        foreach (string key in settings.Keys)
+                        {
+                            parsedParameters.Add(key);
+                            if (key == "Description")
+                                continue;
+                            if (key.EndsWith("Tooltip") && settings[key] is StringSetting)
+                                continue;
+                            if (key.EndsWith("Dropbox") && settings[key] is StringSetting)
+                                continue;
+                            newParameters.Add(key + ":" + SerializeSetting(settings[key]));
+                        }
+                        if (oldComponentDict.ContainsKey(_componentNames[i]))
+                        {
+                            var oldParameters = oldComponentDict[_componentNames[i]];
+                            foreach (string oldParameter in oldParameters)
+                            {
+                                string key = oldParameter.Split(':')[0];
+                                if (!parsedParameters.Contains(key))
+                                    newParameters.Add(oldParameter);
+                            }
+                        }
+                        var component = new MapScriptComponent();
+                        component.ComponentName = _componentNames[i];
+                        component.Parameters = newParameters;
+                        newComponents.Add(component);
+                    }
+                    script.Components = newComponents;
+                }
+
+                MapLoader.SetMaterial(mapObject.GameObject, script.Asset, script.Material, script.Visible, true);
             }
-            script.Components = newComponents;
-            MapLoader.SetMaterial(_mapObject.GameObject, script.Asset, script.Material, script.Visible, true);
+
+            // Batch transform commands into a single undo step
+            List<BaseCommand> transformCommands = new List<BaseCommand>();
+            if (positionObjects.Count > 0)
+                transformCommands.Add(new TransformPositionCommand(positionObjects));
+            if (rotationObjects.Count > 0)
+                transformCommands.Add(new TransformRotationCommand(rotationObjects));
+            if (scaleObjects.Count > 0)
+                transformCommands.Add(new TransformScaleCommand(scaleObjects));
+            if (transformCommands.Count == 1)
+                _gameManager.NewCommand(transformCommands[0], false);
+            else if (transformCommands.Count > 1)
+                _gameManager.NewCommand(new CompositeCommand(transformCommands), false);
+
+            // Re-capture synced snapshot so subsequent edits compare against the now-applied state
+            CaptureSyncedValues();
+
             _gameManager.SyncGizmos();
             if (needRefresh)
-                _menu.ShowInspector(_mapObject);
+                _menu.ShowInspector(_mapObjects);
             if (nameChange)
                 _menu.SyncHierarchyPanel();
         }

@@ -103,6 +103,15 @@ namespace UI
 
         protected virtual void OnSelectObject(string name)
         {
+            var gameManager = (MapEditorGameManager)SceneLoader.CurrentGameManager;
+            if (gameManager.Brush != null && gameManager.Brush.AssetSelectMode)
+            {
+                gameManager.Brush.AddEntry(name);
+                gameManager.Brush.AssetSelectMode = false;
+                ((MapEditorMenu)UIManager.CurrentMenu).SyncBrushPanel();
+                Parent.Hide();
+                return;
+            }
             if (BuiltinMapPrefabs.PrefabVariants.ContainsKey(name))
             {
                 ((MapEditorMenu)UIManager.CurrentMenu).AddVariantPopup.Show(name);
@@ -110,7 +119,7 @@ namespace UI
             }
             else
             {
-                ((MapEditorGameManager)SceneLoader.CurrentGameManager).AddObject(name);
+                gameManager.AddObject(name);
                 Parent.Hide();
             }
         }

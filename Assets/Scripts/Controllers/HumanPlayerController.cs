@@ -1,15 +1,15 @@
-using UnityEngine;
 using ApplicationManagers;
-using Settings;
 using Characters;
-using UI;
-using System.Collections.Generic;
-using Utility;
 using Photon.Pun;
+using Settings;
+using System.Collections.Generic;
+using UI;
+using UnityEngine;
+using Utility;
 
 namespace Controllers
 {
-    class HumanPlayerController : BasePlayerController
+    class HumanPlayerController : BasePlayerController, IHumanController
     {
         protected Human _human;
         protected float _reelOutScrollTimeLeft;
@@ -62,8 +62,9 @@ namespace Controllers
                     _human.HasDirection = false;
                 return;
             }
-            _human.IsWalk = _humanInput.HorseWalk.GetKey();
+            _human.IsWalk = (_humanInput.HorseWalk.GetKey() && _human.MountState == HumanMountState.Horse) || (_humanInput.Walk.GetKey() && _human.MountState == HumanMountState.None);
             if (_human.MountState != HumanMountState.Horse)
+                if (_human.MountState != HumanMountState.Horse)
             {
                 if (_human.Grounded && _human.State != HumanState.Idle)
                     return;
@@ -96,6 +97,10 @@ namespace Controllers
                 _character.HasDirection = true;
                 Vector3 v = new Vector3(right, 0f, forward);
                 float magnitude = (v.magnitude <= 0.95f) ? ((v.magnitude >= 0.25f) ? v.magnitude : 0f) : 1f;
+                if (_human.IsWalk && _human.MountState == HumanMountState.None && _human.State == HumanState.Idle && _human.Grounded)
+                {
+                    magnitude *= 0.25f;
+                }
                 _human.TargetMagnitude = magnitude;
             }
             else
@@ -263,7 +268,7 @@ namespace Controllers
             UpdateHookInput(inMenu);
             UpdateReelInput(inMenu);
             UpdateDashInput(inMenu);
-            bool canWeapon =  _human.IsAttackableState && !_illegalWeaponStates.Contains(_human.State) && !inMenu && !_human.Dead;
+            bool canWeapon = _human.IsAttackableState && !_illegalWeaponStates.Contains(_human.State) && !inMenu && !_human.Dead;
             var attackInput = _humanInput.AttackDefault;
             var specialInput = _humanInput.AttackSpecial;
             if (_human.Weapon is ThunderspearWeapon && SettingsManager.InputSettings.Human.SwapTSAttackSpecial.Value)
@@ -321,7 +326,7 @@ namespace Controllers
                     if (_human.Special is AHSSTwinShot)
                         _human.Special.SetInput(specialInput.GetKeyUp());
                     else
-                    _human.Special.ReadInput(specialInput);
+                        _human.Special.ReadInput(specialInput);
                 }
                 else
                     _human.Special.SetInput(false);
@@ -353,7 +358,7 @@ namespace Controllers
                 if (_human.CarryState == HumanCarryState.Carry)
                 {
                     if (_humanInput.HorseMount.GetKeyDown())
-                        _human.Cache.PhotonView.RPC("UncarryRPC", RpcTarget.All, new object[0]);
+                        _human.Cache.PhotonView.RPC(nameof(_human.UncarryRPC), RpcTarget.All, new object[0]);
                 }
             }
             else if (_human.MountState == HumanMountState.Horse)
@@ -446,23 +451,49 @@ namespace Controllers
                     {
                         if (_human.Stats.OmniDashPerk.CanUse() && _human.Stats.OmniDashPerk.PerkEnabled)
                         {
-                            _human.Stats.OmniDashPerk.OnUse();
                             Vector3 direction = SceneLoader.CurrentCamera.Camera.ScreenPointToRay(CursorManager.GetInGameMousePosition()).direction.normalized;
-                            _human.DashVertical(GetTargetAngle(direction), direction);
+
+                            // Remove horizontal component (project onto forward/up plane)
+                            Vector3 projectedDir = Vector3.ProjectOnPlane(direction, _human.Cache.Transform.right).normalized;
+
+                            // Compute signed vertical angle
+                            float angle = Vector3.SignedAngle(_human.Cache.Transform.forward, projectedDir, -_human.Cache.Transform.right);
+
+                            float upwardPitch = Mathf.Clamp01(angle / 90.0f);
+                            Vector3 modifier = Vector3.one;
+                            if (upwardPitch > 0)
+                            {
+                                modifier.y = _human.Stats.OmniDashPerk.GetPowerRatio();
+                            }
+
+
+                            bool used = _human.DashVertical(GetTargetAngle(direction), direction, modifier);
+                            if (used)
+                                _human.Stats.OmniDashPerk.OnUse(upwardPitch);
                         }
                         else if (_human.Stats.VerticalDashPerk.CanUse() && _human.Stats.VerticalDashPerk.PerkEnabled && !_human.Stats.OmniDashPerk.PerkEnabled)
                         {
-                            _human.Stats.VerticalDashPerk.OnUse();
                             float angle = SceneLoader.CurrentCamera.Cache.Transform.rotation.eulerAngles.x;
                             if (angle < 0)
                                 angle += 360f;
                             if (angle >= 360f)
                                 angle -= 360f;
                             Vector3 direction = SceneLoader.CurrentCamera.Camera.ScreenPointToRay(CursorManager.GetInGameMousePosition()).direction.normalized;
+                            Vector3 modifier = Vector3.one;
+                            float usage = 0;
+                            if (angle <= 0f || angle >= 180f)
+                            {
+                                modifier.y = _human.Stats.OmniDashPerk.GetPowerRatio();
+                                usage = 1f;
+                            }
+                            bool used = false;
                             if (angle > 0f && angle < 180f)
-                                _human.DashVertical(GetTargetAngle(direction), Vector3.down);
+                                used = _human.DashVertical(GetTargetAngle(direction), Vector3.down, modifier);
                             else
-                                _human.DashVertical(GetTargetAngle(direction), Vector3.up);
+                                used = _human.DashVertical(GetTargetAngle(direction), Vector3.up, modifier);
+
+                            if (used)
+                                _human.Stats.VerticalDashPerk.OnUse(usage);
                         }
                     }
                 }
@@ -507,6 +538,35 @@ namespace Controllers
         bool IsSpin3Special()
         {
             return _human.State == HumanState.SpecialAttack && _human.Special is Spin3Special;
+        }
+
+        public bool MovingLeft()
+        {
+            return SettingsManager.InputSettings.General.Left.GetKey();
+        }
+        public bool MovingRight()
+        {
+            return SettingsManager.InputSettings.General.Right.GetKey();
+        }
+
+        public bool UsingGas()
+        {
+            return SettingsManager.InputSettings.Human.Jump.GetKey();
+        }
+
+        public bool HookingLeft()
+        {
+            return SettingsManager.InputSettings.Human.HookLeft.GetKey();
+        }
+
+        public bool HookingRight()
+        {
+            return SettingsManager.InputSettings.Human.HookRight.GetKey();
+        }
+
+        public bool HookingBoth()
+        {
+            return SettingsManager.InputSettings.Human.HookBoth.GetKey();
         }
     }
 }

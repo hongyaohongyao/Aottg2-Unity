@@ -9963,6 +9963,105 @@ ModelImporter:
       maskType: 3
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Armature|walking
+      takeName: Armature|walking
+      internalID: 2763422930873186293
+      firstFrame: 0
+      lastFrame: 58
+      wrapMode: 2
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Core
+        weight: 1
+      - path: Armature/Core/Controller_Body
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest/neck
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest/neck/head
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest/neck/head/char_head
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest/shoulder_L
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest/shoulder_L/upper_arm_L
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest/shoulder_L/upper_arm_L/forearm_L
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest/shoulder_L/upper_arm_L/forearm_L/hand_L
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest/shoulder_R
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest/shoulder_R/upper_arm_R
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest/shoulder_R/upper_arm_R/forearm_R
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/spine/chest/shoulder_R/upper_arm_R/forearm_R/hand_R
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/thigh_L
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/thigh_L/shin_L
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/thigh_L/shin_L/foot_L
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/thigh_R
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/thigh_R/shin_R
+        weight: 1
+      - path: Armature/Core/Controller_Body/hip/thigh_R/shin_R/foot_R
+        weight: 1
+      - path: Armature/Core/IK_L
+        weight: 1
+      - path: Armature/Core/IK_L/knee.L
+        weight: 1
+      - path: Armature/Core/IK_R
+        weight: 1
+      - path: Armature/Core/IK_R/knee.R
+        weight: 1
+      - path: char_chest
+        weight: 1
+      - path: character_leg_0
+        weight: 1
+      - path: player_casual_arm_AH_L
+        weight: 1
+      - path: player_casual_arm_AH_R
+        weight: 1
+      - path: player_casual_FA
+        weight: 1
+      - path: player_emptyhand_L
+        weight: 1
+      - path: player_emptyhand_R
+        weight: 1
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
     isReadable: 1
   meshes:
     lODScreenPercentages: []

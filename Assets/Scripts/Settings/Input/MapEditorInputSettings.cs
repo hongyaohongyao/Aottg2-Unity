@@ -33,5 +33,13 @@
         public KeybindSetting SnapCameraUp = new KeybindSetting(new string[] { "UpArrow", "None" });
         public KeybindSetting SnapCameraDown = new KeybindSetting(new string[] { "DownArrow", "None" });
         public KeybindSetting ToggleOrthographic = new KeybindSetting(new string[] { "O", "None" });
+        public KeybindSetting VertexSnap = new KeybindSetting(new string[] { "V", "None" });
+        public KeybindSetting BrushReroll = new KeybindSetting(new string[] { "Mouse2", "None" });
+        public KeybindSetting BrushCount = new KeybindSetting(new string[] { "LeftShift", "None" });
+        public KeybindSetting BrushCurve = new KeybindSetting(new string[] { "LeftControl", "None" });
+        public KeybindSetting BrushCurveAxisX = new KeybindSetting(new string[] { "1", "None" });
+        public KeybindSetting BrushCurveAxisY = new KeybindSetting(new string[] { "2", "None" });
+        public KeybindSetting BrushCurveAxisZ = new KeybindSetting(new string[] { "3", "None" });
+        public KeybindSetting BrushCurveAxisNone = new KeybindSetting(new string[] { "0", "None" });
     }
 }
